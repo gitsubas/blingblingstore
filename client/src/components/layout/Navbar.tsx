@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, User } from "lucide-react";
+import { ShoppingCart, Search, Menu, User, LogOut, Package, UserCircle } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useState } from "react";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo.jpg";
 
 const categories = [
@@ -18,7 +19,9 @@ const categories = [
 
 export function Navbar() {
     const { itemCount } = useCart();
+    const { user, isAuthenticated, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -62,7 +65,7 @@ export function Navbar() {
                             <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-400" />
                         </div>
 
-                        <Link to="/cart">
+                        <Link to="/checkout">
                             <Button variant="ghost" size="sm" className="relative">
                                 <ShoppingCart className="h-5 w-5" />
                                 {itemCount > 0 && (
@@ -73,11 +76,72 @@ export function Navbar() {
                             </Button>
                         </Link>
 
-                        <Link to="/login">
-                            <Button variant="ghost" size="sm">
+                        {/* User Menu */}
+                        <div className="relative">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                            >
                                 <User className="h-5 w-5" />
                             </Button>
-                        </Link>
+
+                            {isUserMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                                    {isAuthenticated ? (
+                                        <>
+                                            <div className="px-4 py-2 border-b border-gray-100">
+                                                <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                                                <p className="text-xs text-gray-500">{user?.email}</p>
+                                            </div>
+                                            <Link
+                                                to="/dashboard/orders"
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            >
+                                                <Package className="h-4 w-4" />
+                                                My Orders
+                                            </Link>
+                                            <Link
+                                                to="/dashboard/profile"
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            >
+                                                <UserCircle className="h-4 w-4" />
+                                                Profile
+                                            </Link>
+                                            <button
+                                                onClick={() => {
+                                                    logout();
+                                                    setIsUserMenuOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                Sign Out
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                to="/login"
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            >
+                                                Sign In
+                                            </Link>
+                                            <Link
+                                                to="/signup"
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            >
+                                                Sign Up
+                                            </Link>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <Button
                             variant="ghost"
