@@ -30,6 +30,11 @@ export interface Order {
     items: OrderItem[];
     total: number;
     status: "pending" | "processing" | "shipped" | "delivered" | "returned";
+    paymentMethod: "esewa" | "khalti" | "cod" | "card";
+    paymentDetails?: {
+        transactionId?: string;
+        paidAmount: number;
+    };
     shippingAddress: {
         fullName: string;
         address: string;
@@ -44,11 +49,27 @@ export interface Order {
 
 interface OrdersContextType {
     orders: Order[];
-    createOrder: (items: OrderItem[], total: number, shippingAddress: Order["shippingAddress"]) => Order;
+    createOrder: (
+        items: OrderItem[],
+        total: number,
+        shippingAddress: Order["shippingAddress"],
+        paymentMethod: Order["paymentMethod"],
+        transactionId?: string
+    ) => Order;
     getOrderById: (orderId: string) => Order | undefined;
     getUserOrders: (userId: string) => Order[];
     submitReview: (orderId: string, productId: string, rating: number, comment: string) => void;
     requestReturn: (orderId: string, reason: string, type: "refund" | "exchange", notes: string) => void;
+    // Admin-only methods
+    getAllOrders: () => Order[];
+    updateOrderStatus: (orderId: string, status: Order["status"]) => boolean;
+    deleteOrder: (orderId: string) => boolean;
+    getOrderStats: () => {
+        totalOrders: number;
+        totalRevenue: number;
+        pendingOrders: number;
+        deliveredOrders: number;
+    };
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
@@ -71,7 +92,9 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
     const createOrder = (
         items: OrderItem[],
         total: number,
-        shippingAddress: Order["shippingAddress"]
+        shippingAddress: Order["shippingAddress"],
+        paymentMethod: Order["paymentMethod"],
+        transactionId?: string
     ): Order => {
         if (!user) throw new Error("User must be logged in to create an order");
 
@@ -81,6 +104,13 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
             items,
             total,
             status: "pending",
+            paymentMethod,
+            paymentDetails: transactionId
+                ? {
+                    transactionId,
+                    paidAmount: total,
+                }
+                : undefined,
             shippingAddress,
             createdAt: new Date().toISOString(),
             reviews: [],
@@ -149,6 +179,45 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
         );
     };
 
+    // Admin-only methods
+    const getAllOrders = (): Order[] => {
+        return orders;
+    };
+
+    const updateOrderStatus = (orderId: string, status: Order["status"]): boolean => {
+        const orderExists = orders.some((order) => order.id === orderId);
+        if (!orderExists) return false;
+
+        setOrders((prev) =>
+            prev.map((order) =>
+                order.id === orderId ? { ...order, status } : order
+            )
+        );
+        return true;
+    };
+
+    const deleteOrder = (orderId: string): boolean => {
+        const orderExists = orders.some((order) => order.id === orderId);
+        if (!orderExists) return false;
+
+        setOrders((prev) => prev.filter((order) => order.id !== orderId));
+        return true;
+    };
+
+    const getOrderStats = () => {
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const pendingOrders = orders.filter((order) => order.status === "pending").length;
+        const deliveredOrders = orders.filter((order) => order.status === "delivered").length;
+
+        return {
+            totalOrders,
+            totalRevenue,
+            pendingOrders,
+            deliveredOrders,
+        };
+    };
+
     return (
         <OrdersContext.Provider
             value={{
@@ -158,6 +227,11 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
                 getUserOrders,
                 submitReview,
                 requestReturn,
+                // Admin methods
+                getAllOrders,
+                updateOrderStatus,
+                deleteOrder,
+                getOrderStats,
             }}
         >
             {children}

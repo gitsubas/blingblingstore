@@ -6,6 +6,7 @@ export interface Product {
     price: number;
     category: string;
     image: string;
+    images?: string[]; // Multiple images for gallery
     description: string;
 }
 

@@ -17,6 +17,12 @@ interface AuthContextType {
     resetPassword: (email: string) => Promise<boolean>;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    // Admin-only methods
+    getAllUsers: () => User[];
+    updateUser: (userId: string, data: Partial<Omit<User, 'id'>>) => boolean;
+    deleteUser: (userId: string) => boolean;
+    updateUserRole: (userId: string, role: "user" | "admin") => boolean;
+    createUser: (username: string, email: string, password: string, role: "user" | "admin") => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -80,7 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             setUser(adminUser);
             localStorage.setItem("currentUser", JSON.stringify(adminUser));
-            navigate("/admin");
+            // Defer navigation to allow React state to update
+            setTimeout(() => navigate("/admin"), 0);
             return true;
         }
 
@@ -95,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (foundUser) {
                 setUser(foundUser);
                 localStorage.setItem("currentUser", JSON.stringify(foundUser));
-                navigate("/");
+                setTimeout(() => navigate("/"), 0);
                 return true;
             }
         }
@@ -116,6 +123,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return userExists;
     };
 
+    // Admin-only methods
+    const getAllUsers = (): User[] => {
+        if (!user || user.role !== "admin") return [];
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+        return users;
+    };
+
+    const updateUser = (userId: string, data: Partial<Omit<User, 'id'>>): boolean => {
+        if (!user || user.role !== "admin") return false;
+
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+        const userIndex = users.findIndex((u: User) => u.id === userId);
+
+        if (userIndex === -1) return false;
+
+        users[userIndex] = { ...users[userIndex], ...data };
+        localStorage.setItem("users", JSON.stringify(users));
+
+        // Update current user if editing self
+        if (userId === user.id) {
+            const updatedUser = users[userIndex];
+            setUser(updatedUser);
+            localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+        }
+
+        return true;
+    };
+
+    const deleteUser = (userId: string): boolean => {
+        if (!user || user.role !== "admin") return false;
+        if (userId === user.id) return false; // Cannot delete self
+
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+        const filteredUsers = users.filter((u: User) => u.id !== userId);
+
+        if (filteredUsers.length === users.length) return false;
+
+        localStorage.setItem("users", JSON.stringify(filteredUsers));
+
+        // Also remove credentials
+        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
+        const filteredCredentials = credentials.filter((c: any) => c.userId !== userId);
+        localStorage.setItem("userCredentials", JSON.stringify(filteredCredentials));
+
+        return true;
+    };
+
+    const updateUserRole = (userId: string, role: "user" | "admin"): boolean => {
+        if (!user || user.role !== "admin") return false;
+        if (userId === user.id) return false; // Cannot change own role
+
+        return updateUser(userId, { role });
+    };
+
+    const createUser = (username: string, email: string, password: string, role: "user" | "admin" = "user"): boolean => {
+        if (!user || user.role !== "admin") return false;
+
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+
+        // Check if email already exists
+        if (users.some((u: User) => u.email === email)) {
+            return false;
+        }
+
+        const newUser: User = {
+            id: Date.now().toString(),
+            username,
+            email,
+            role,
+            createdAt: new Date().toISOString(),
+        };
+
+        const userCredentials = {
+            email,
+            password,
+            userId: newUser.id,
+        };
+
+        users.push(newUser);
+        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
+        credentials.push(userCredentials);
+
+        localStorage.setItem("users", JSON.stringify(users));
+        localStorage.setItem("userCredentials", JSON.stringify(credentials));
+
+        return true;
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -126,6 +221,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 resetPassword,
                 isAuthenticated: !!user,
                 isAdmin: user?.role === "admin",
+                // Admin methods
+                getAllUsers,
+                updateUser,
+                deleteUser,
+                updateUserRole,
+                createUser,
             }}
         >
             {children}

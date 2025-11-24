@@ -22,6 +22,7 @@ export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -57,15 +58,30 @@ export function Navbar() {
 
                     {/* Search & Actions */}
                     <div className="flex items-center space-x-4">
-                        <div className="hidden lg:flex relative w-64">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                if (searchQuery.trim()) {
+                                    window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
+                                }
+                            }}
+                            className="hidden lg:flex relative w-64"
+                        >
                             <Input
                                 placeholder="Search products..."
                                 className="pr-8"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        </div>
+                            <button
+                                type="submit"
+                                className="absolute right-2.5 top-2.5 cursor-pointer bg-transparent border-0 p-0"
+                            >
+                                <Search className="h-4 w-4 text-gray-400 hover:text-primary transition-colors" />
+                            </button>
+                        </form>
 
-                        <Link to="/checkout">
+                        <Link to="/cart">
                             <Button variant="ghost" size="sm" className="relative">
                                 <ShoppingCart className="h-5 w-5" />
                                 {itemCount > 0 && (

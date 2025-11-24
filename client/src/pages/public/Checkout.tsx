@@ -6,6 +6,10 @@ import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { ArrowLeft } from "lucide-react";
+import { PaymentMethodSelector, PaymentMethod } from "../../components/payment/PaymentMethodSelector";
+import { EsewaPayment } from "../../components/payment/EsewaPayment";
+import { KhaltiPayment } from "../../components/payment/KhaltiPayment";
+import { CashOnDelivery } from "../../components/payment/CashOnDelivery";
 
 export function Checkout() {
     const navigate = useNavigate();
@@ -13,7 +17,7 @@ export function Checkout() {
     const { createOrder } = useOrders();
     const { user } = useAuth();
     const [step, setStep] = useState<"shipping" | "payment">("shipping");
-    const [loading, setLoading] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("esewa");
     const [shippingData, setShippingData] = useState({
         firstName: "",
         lastName: "",
@@ -44,13 +48,7 @@ export function Checkout() {
         setStep("payment");
     };
 
-    const handlePaymentSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
+    const handlePaymentSuccess = (transactionId?: string) => {
         // Create order
         const orderItems: OrderItem[] = items.map((item) => ({
             productId: item.id,
@@ -60,17 +58,26 @@ export function Checkout() {
             image: item.image,
         }));
 
-        const order = createOrder(orderItems, total, {
-            fullName: `${shippingData.firstName} ${shippingData.lastName}`,
-            address: shippingData.address,
-            city: shippingData.city,
-            postalCode: shippingData.postalCode,
-            phone: shippingData.phone,
-        });
+        const order = createOrder(
+            orderItems,
+            total,
+            {
+                fullName: `${shippingData.firstName} ${shippingData.lastName}`,
+                address: shippingData.address,
+                city: shippingData.city,
+                postalCode: shippingData.postalCode,
+                phone: shippingData.phone,
+            },
+            paymentMethod,
+            transactionId
+        );
 
         clearCart();
-        setLoading(false);
         navigate(`/order-confirmation/${order.id}`);
+    };
+
+    const handleCODConfirm = () => {
+        handlePaymentSuccess(); // COD doesn't have a transaction ID
     };
 
     return (
@@ -117,7 +124,7 @@ export function Checkout() {
                                 <Input
                                     required
                                     type="tel"
-                                    placeholder="+1 234 567 8900"
+                                    placeholder="+977 98XXXXXXXX"
                                     value={shippingData.phone}
                                     onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
                                 />
@@ -136,7 +143,7 @@ export function Checkout() {
                                     <label className="text-sm font-medium text-gray-700">City</label>
                                     <Input
                                         required
-                                        placeholder="New York"
+                                        placeholder="Kathmandu"
                                         value={shippingData.city}
                                         onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
                                     />
@@ -145,7 +152,7 @@ export function Checkout() {
                                     <label className="text-sm font-medium text-gray-700">ZIP Code</label>
                                     <Input
                                         required
-                                        placeholder="10001"
+                                        placeholder="44600"
                                         value={shippingData.postalCode}
                                         onChange={(e) => setShippingData({ ...shippingData, postalCode: e.target.value })}
                                     />
@@ -156,29 +163,36 @@ export function Checkout() {
                             </Button>
                         </form>
                     ) : (
-                        <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Card Number</label>
-                                <Input required placeholder="0000 0000 0000 0000" />
+                        <div className="space-y-6">
+                            <PaymentMethodSelector
+                                selectedMethod={paymentMethod}
+                                onMethodChange={setPaymentMethod}
+                            />
+
+                            <div className="mt-6">
+                                {paymentMethod === "esewa" && (
+                                    <EsewaPayment
+                                        amount={total}
+                                        onSuccess={handlePaymentSuccess}
+                                        onCancel={() => setStep("shipping")}
+                                    />
+                                )}
+                                {paymentMethod === "khalti" && (
+                                    <KhaltiPayment
+                                        amount={total}
+                                        onSuccess={handlePaymentSuccess}
+                                        onCancel={() => setStep("shipping")}
+                                    />
+                                )}
+                                {paymentMethod === "cod" && (
+                                    <CashOnDelivery
+                                        amount={total}
+                                        onConfirm={handleCODConfirm}
+                                        onCancel={() => setStep("shipping")}
+                                    />
+                                )}
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">Expiry Date</label>
-                                    <Input required placeholder="MM/YY" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">CVC</label>
-                                    <Input required placeholder="123" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Cardholder Name</label>
-                                <Input required placeholder="John Doe" />
-                            </div>
-                            <Button type="submit" className="w-full mt-6" size="lg" disabled={loading}>
-                                {loading ? "Processing..." : `Pay Rs. ${total.toFixed(2)}`}
-                            </Button>
-                        </form>
+                        </div>
                     )}
                 </div>
 

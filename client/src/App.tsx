@@ -3,6 +3,7 @@ import { Layout } from "./components/layout/Layout";
 import { Home } from "./pages/public/Home";
 import { Shop } from "./pages/public/Shop";
 import { ProductDetails } from "./pages/public/ProductDetails";
+import { Cart } from "./pages/public/Cart";
 import { Login } from "./pages/public/Login";
 import { Signup } from "./pages/public/Signup";
 import { PasswordReset } from "./pages/public/PasswordReset";
@@ -10,6 +11,12 @@ import { Checkout } from "./pages/public/Checkout";
 import { OrderConfirmation } from "./pages/public/OrderConfirmation";
 import { Dashboard } from "./pages/admin/Dashboard";
 import { ProductEditor } from "./pages/admin/ProductEditor";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { UserEditor } from "./pages/admin/UserEditor";
+import { OrderManagement } from "./pages/admin/OrderManagement";
+import { OrderDetailAdmin } from "./pages/admin/OrderDetailAdmin";
+import { PaymentManagement } from "./pages/admin/PaymentManagement";
+import { AdminLayout } from "./components/admin/AdminLayout";
 import { UserDashboard } from "./pages/user/UserDashboard";
 import { OrderHistory } from "./pages/user/OrderHistory";
 import { OrderDetails } from "./pages/user/OrderDetails";
@@ -19,8 +26,17 @@ import { useAuth } from "./context/AuthContext";
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
     const { isAuthenticated, isAdmin } = useAuth();
 
-    if (!isAuthenticated) return <Navigate to="/login" />;
-    if (adminOnly && !isAdmin) return <Navigate to="/" />;
+    // Fallback to localStorage check for immediate auth state after login
+    const savedUser = localStorage.getItem("currentUser");
+    const user = savedUser ? JSON.parse(savedUser) : null;
+    const isAuthenticatedFallback = !!user;
+    const isAdminFallback = user?.role === "admin";
+
+    const authenticated = isAuthenticated || isAuthenticatedFallback;
+    const admin = isAdmin || isAdminFallback;
+
+    if (!authenticated) return <Navigate to="/login" />;
+    if (adminOnly && !admin) return <Navigate to="/" />;
 
     return <>{children}</>;
 }
@@ -32,6 +48,7 @@ function App() {
                 <Route index element={<Home />} />
                 <Route path="shop" element={<Shop />} />
                 <Route path="product/:id" element={<ProductDetails />} />
+                <Route path="cart" element={<Cart />} />
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="password-reset" element={<PasswordReset />} />
@@ -45,14 +62,31 @@ function App() {
                     <Route path="orders/:orderId" element={<OrderDetails />} />
                     <Route path="profile" element={<UserProfile />} />
                 </Route>
+            </Route>
 
-                {/* Admin Routes */}
-                <Route path="admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
-                <Route path="admin/products/new" element={<ProtectedRoute adminOnly><ProductEditor /></ProtectedRoute>} />
-                <Route path="admin/products/:id" element={<ProtectedRoute adminOnly><ProductEditor /></ProtectedRoute>} />
+            {/* Admin Routes with AdminLayout */}
+            <Route
+                path="/admin"
+                element={
+                    <ProtectedRoute adminOnly>
+                        <AdminLayout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route index element={<Dashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="users/new" element={<UserEditor />} />
+                <Route path="users/:id" element={<UserEditor />} />
+                <Route path="orders" element={<OrderManagement />} />
+                <Route path="orders/:orderId" element={<OrderDetailAdmin />} />
+                <Route path="payments" element={<PaymentManagement />} />
+                <Route path="products" element={<Dashboard />} />
+                <Route path="products/new" element={<ProductEditor />} />
+                <Route path="products/:id" element={<ProductEditor />} />
             </Route>
         </Routes>
     );
 }
 
 export default App;
+

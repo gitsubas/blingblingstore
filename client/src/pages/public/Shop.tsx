@@ -19,21 +19,54 @@ export function Shop() {
     const { products } = useProducts();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentCategory = searchParams.get("category") || "All";
+    const searchQuery = searchParams.get("search") || "";
 
-    const filteredProducts =
+    // Filter products by category
+    let filteredProducts =
         currentCategory === "All"
             ? products
             : products.filter((p) => p.category === currentCategory);
+
+    // Further filter by search query if present
+    if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filteredProducts = filteredProducts.filter(
+            (p) =>
+                p.name.toLowerCase().includes(query) ||
+                p.description.toLowerCase().includes(query) ||
+                p.category.toLowerCase().includes(query)
+        );
+    }
+
+    const handleClearSearch = () => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("search");
+        setSearchParams(newParams);
+    };
+
+    const handleClearAll = () => {
+        setSearchParams({});
+    };
 
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Shop</h1>
+                    {searchQuery && (
+                        <p className="text-gray-600 mt-1">
+                            Search results for: <span className="font-semibold text-primary">"{searchQuery}"</span>
+                        </p>
+                    )}
                     <p className="text-gray-500 mt-1">
-                        {filteredProducts.length} products found
+                        {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
                     </p>
                 </div>
+                {(searchQuery || currentCategory !== "All") && (
+                    <Button variant="outline" onClick={handleClearAll}>
+                        Clear All Filters
+                    </Button>
+                )}
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
@@ -51,7 +84,15 @@ export function Shop() {
                                             "w-full justify-start",
                                             currentCategory === cat ? "bg-primary/10 text-primary" : ""
                                         )}
-                                        onClick={() => setSearchParams(cat === "All" ? {} : { category: cat })}
+                                        onClick={() => {
+                                            const newParams = new URLSearchParams(searchParams);
+                                            if (cat === "All") {
+                                                newParams.delete("category");
+                                            } else {
+                                                newParams.set("category", cat);
+                                            }
+                                            setSearchParams(newParams);
+                                        }}
                                     >
                                         {cat}
                                     </Button>
@@ -71,13 +112,18 @@ export function Shop() {
                         </div>
                     ) : (
                         <div className="text-center py-12">
-                            <p className="text-gray-500 text-lg">No products found in this category.</p>
+                            <p className="text-gray-500 text-lg">
+                                {searchQuery
+                                    ? `No products found matching "${searchQuery}"`
+                                    : "No products found in this category."
+                                }
+                            </p>
                             <Button
                                 variant="outline"
                                 className="mt-4"
-                                onClick={() => setSearchParams({})}
+                                onClick={searchQuery ? handleClearSearch : handleClearAll}
                             >
-                                View All Products
+                                {searchQuery ? "Clear Search" : "View All Products"}
                             </Button>
                         </div>
                     )}
