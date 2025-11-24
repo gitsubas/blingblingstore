@@ -28,12 +28,6 @@ export function Checkout() {
         phone: "",
     });
 
-    // Redirect to login if not authenticated
-    if (!user) {
-        navigate("/login");
-        return null;
-    }
-
     if (items.length === 0) {
         return (
             <div className="text-center py-12">

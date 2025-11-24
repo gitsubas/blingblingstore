@@ -52,7 +52,7 @@ function App() {
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="password-reset" element={<PasswordReset />} />
-                <Route path="checkout" element={<Checkout />} />
+                <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                 <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
 
                 {/* User Dashboard Routes */}
