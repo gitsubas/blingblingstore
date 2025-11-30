@@ -96,11 +96,12 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
         paymentMethod: Order["paymentMethod"],
         transactionId?: string
     ): Order => {
-        if (!user) throw new Error("User must be logged in to create an order");
+        // Allow guest checkout
+        const userId = user ? user.id : "guest";
 
         const newOrder: Order = {
             id: `ORD-${Date.now()}`,
-            userId: user.id,
+            userId,
             items,
             total,
             status: "pending",

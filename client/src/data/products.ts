@@ -21,6 +21,8 @@ export const products: Product[] = [
             "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&q=80"
         ],
         description: "A stunning hand-crafted abstract sculpture that adds a modern touch to any room. Made from sustainable materials.",
+        rating: 4.8,
+        reviews: 12,
     },
     {
         id: "2",
@@ -35,6 +37,8 @@ export const products: Product[] = [
             "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=800&q=80"
         ],
         description: "Original oil painting featuring vibrant floral patterns. Perfect for living rooms or bedrooms.",
+        rating: 4.5,
+        reviews: 8,
     },
     {
         id: "3",
@@ -44,6 +48,8 @@ export const products: Product[] = [
         image: vaseImg,
         images: [vaseImg],
         description: "Hand-thrown ceramic vase with a matte white finish. Ideal for dried flowers or standalone display.",
+        rating: 4.2,
+        reviews: 25,
     },
     {
         id: "4",
@@ -57,6 +63,8 @@ export const products: Product[] = [
             "https://images.unsplash.com/photo-1631214524020-7e18db7a8f23?w=800&q=80"
         ],
         description: "Long-lasting matte lipstick in a classic red shade. Enriched with Vitamin E for hydration.",
+        rating: 4.9,
+        reviews: 150,
     },
     {
         id: "5",
@@ -65,6 +73,8 @@ export const products: Product[] = [
         category: "Apparel",
         image: scarfImg,
         description: "100% silk scarf with a delicate floral print. Soft, breathable, and elegant.",
+        rating: 4.6,
+        reviews: 32,
     },
     {
         id: "6",
@@ -78,6 +88,8 @@ export const products: Product[] = [
             "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80"
         ],
         description: "Set of 3 gold-plated bangles with intricate detailing. Hypoallergenic and tarnish-resistant.",
+        rating: 4.7,
+        reviews: 45,
     },
     {
         id: "7",
@@ -92,6 +104,8 @@ export const products: Product[] = [
             "https://images.unsplash.com/photo-1564422167509-4f10d8370107?w=800&q=80"
         ],
         description: "Genuine leather crossbody bag with adjustable strap. Compact yet spacious enough for essentials.",
+        rating: 4.4,
+        reviews: 67,
     },
     {
         id: "8",
@@ -100,6 +114,8 @@ export const products: Product[] = [
         category: "Jewelry",
         image: earringsImg,
         description: "Statement chandelier earrings with sparkling crystals. Perfect for evening wear.",
+        rating: 4.3,
+        reviews: 18,
     },
 ];
 

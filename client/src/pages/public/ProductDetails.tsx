@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ShoppingCart, ArrowLeft } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Heart } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductsContext";
+import { useWishlist } from "../../context/WishlistContext";
 import { ProductReviews } from "../../components/product/ProductReviews";
 
 export function ProductDetails() {
@@ -12,6 +13,7 @@ export function ProductDetails() {
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const { products } = useProducts();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     const product = products.find((p) => p.id === id);
@@ -64,8 +66,8 @@ export function ProductDetails() {
                                     key={index}
                                     onClick={() => setSelectedImageIndex(index)}
                                     className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                                            ? 'border-primary shadow-lg scale-105'
-                                            : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'
+                                        ? 'border-primary shadow-lg scale-105'
+                                        : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'
                                         }`}
                                     aria-label={`View image ${index + 1}`}
                                 >
@@ -100,14 +102,29 @@ export function ProductDetails() {
                         </p>
                     </div>
 
-                    <div className="pt-8 border-t border-gray-200">
+                    <div className="pt-8 border-t border-gray-200 flex gap-4">
                         <Button
                             size="lg"
-                            className="w-full md:w-auto min-w-[200px]"
+                            className="flex-1 md:flex-none md:min-w-[200px]"
                             onClick={() => addToCart(product)}
                         >
                             <ShoppingCart className="mr-2 h-5 w-5" />
                             Add to Cart
+                        </Button>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className={`flex-1 md:flex-none ${isInWishlist(product.id) ? "text-red-500 hover:text-red-600 border-red-200 bg-red-50" : ""}`}
+                            onClick={() => {
+                                if (isInWishlist(product.id)) {
+                                    removeFromWishlist(product.id);
+                                } else {
+                                    addToWishlist(product);
+                                }
+                            }}
+                        >
+                            <Heart className={`mr-2 h-5 w-5 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                            {isInWishlist(product.id) ? "Saved to Wishlist" : "Add to Wishlist"}
                         </Button>
                     </div>
                 </div>

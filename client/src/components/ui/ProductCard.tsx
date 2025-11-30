@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Card, CardContent, CardFooter } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Product, useCart } from "../../context/CartContext";
+import { useWishlist } from "../../context/WishlistContext";
 
 interface ProductCardProps {
     product: Product;
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCart();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const images = product.images && product.images.length > 0 ? product.images : [product.image];
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -77,8 +79,8 @@ export function ProductCard({ product }: ProductCardProps) {
                                 key={index}
                                 onClick={(e) => selectImage(index, e)}
                                 className={`flex-shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${currentImageIndex === index
-                                        ? 'border-primary shadow-md scale-105'
-                                        : 'border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-100'
+                                    ? 'border-primary shadow-md scale-105'
+                                    : 'border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-100'
                                     }`}
                                 aria-label={`View image ${index + 1}`}
                             >
@@ -104,15 +106,28 @@ export function ProductCard({ product }: ProductCardProps) {
                     Rs. {product.price.toFixed(2)}
                 </div>
             </CardContent>
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-4 pt-0 gap-2">
                 <Button
-                    className="w-full"
+                    className="flex-1"
                     onClick={() => addToCart(product)}
                 >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
                 </Button>
+                <Button
+                    variant="outline"
+                    className={`px-3 ${isInWishlist(product.id) ? "text-red-500 hover:text-red-600" : ""}`}
+                    onClick={() => {
+                        if (isInWishlist(product.id)) {
+                            removeFromWishlist(product.id);
+                        } else {
+                            addToWishlist(product);
+                        }
+                    }}
+                >
+                    <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                </Button>
             </CardFooter>
-        </Card>
+        </Card >
     );
 }

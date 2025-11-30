@@ -8,6 +8,8 @@ export interface Product {
     image: string;
     images?: string[]; // Multiple images for gallery
     description: string;
+    rating?: number;
+    reviews?: number;
 }
 
 export interface CartItem extends Product {

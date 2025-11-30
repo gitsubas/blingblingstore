@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useOrders, OrderItem } from "../../context/OrdersContext";
 import { useAuth } from "../../context/AuthContext";
@@ -91,8 +91,28 @@ export function Checkout() {
                         {step === "shipping" ? "Shipping Information" : "Payment Details"}
                     </h1>
 
+                    {!user && step === "shipping" && (
+                        <div className="mb-6 p-4 bg-blue-50 text-blue-700 rounded-md text-sm flex justify-between items-center">
+                            <span>Already have an account?</span>
+                            <Link to="/login?redirect=/checkout" className="font-medium hover:underline">
+                                Log in
+                            </Link>
+                        </div>
+                    )}
+
                     {step === "shipping" ? (
                         <form onSubmit={handleShippingSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Email</label>
+                                <Input
+                                    required
+                                    type="email"
+                                    placeholder="john@example.com"
+                                    value={shippingData.email}
+                                    onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
+                                    disabled={!!user}
+                                />
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">First Name</label>
@@ -103,6 +123,7 @@ export function Checkout() {
                                         onChange={(e) => setShippingData({ ...shippingData, firstName: e.target.value })}
                                     />
                                 </div>
+
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Last Name</label>
                                     <Input
@@ -220,6 +241,6 @@ export function Checkout() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

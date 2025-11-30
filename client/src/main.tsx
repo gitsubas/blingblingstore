@@ -6,6 +6,7 @@ import { CartProvider } from './context/CartContext.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { OrdersProvider } from './context/OrdersContext.tsx'
 import { ProductsProvider } from './context/ProductsContext.tsx'
+import { WishlistProvider } from './context/WishlistContext.tsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <ProductsProvider>
                     <OrdersProvider>
                         <CartProvider>
-                            <App />
+                            <WishlistProvider>
+                                <App />
+                            </WishlistProvider>
                         </CartProvider>
                     </OrdersProvider>
                 </ProductsProvider>

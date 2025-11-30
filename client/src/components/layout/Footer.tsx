@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Facebook, Instagram } from "lucide-react";
 
 export function Footer() {
@@ -22,8 +23,9 @@ export function Footer() {
                     <div>
                         <h4 className="font-medium text-primary mb-4">Support</h4>
                         <ul className="space-y-2 text-sm text-gray-600">
-                            <li><a href="#" className="hover:text-primary">Contact Us</a></li>
-                            <li><a href="#" className="hover:text-primary">FAQs</a></li>
+                            <li><Link to="/contact" className="hover:text-primary">Contact Us</Link></li>
+                            <li><Link to="/about" className="hover:text-primary">About Us</Link></li>
+                            <li><Link to="/contact" className="hover:text-primary">FAQs</Link></li>
                             <li><a href="#" className="hover:text-primary">Shipping</a></li>
                         </ul>
                     </div>

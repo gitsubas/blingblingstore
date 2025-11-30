@@ -9,6 +9,9 @@ import { Signup } from "./pages/public/Signup";
 import { PasswordReset } from "./pages/public/PasswordReset";
 import { Checkout } from "./pages/public/Checkout";
 import { OrderConfirmation } from "./pages/public/OrderConfirmation";
+import { About } from "./pages/public/About";
+import { Contact } from "./pages/public/Contact";
+import { NotFound } from "./pages/public/NotFound";
 import { Dashboard } from "./pages/admin/Dashboard";
 import { ProductEditor } from "./pages/admin/ProductEditor";
 import { UserManagement } from "./pages/admin/UserManagement";
@@ -21,6 +24,7 @@ import { UserDashboard } from "./pages/user/UserDashboard";
 import { OrderHistory } from "./pages/user/OrderHistory";
 import { OrderDetails } from "./pages/user/OrderDetails";
 import { UserProfile } from "./pages/user/UserProfile";
+import { Wishlist } from "./pages/user/Wishlist";
 import { useAuth } from "./context/AuthContext";
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -52,14 +56,18 @@ function App() {
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="password-reset" element={<PasswordReset />} />
-                <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route path="checkout" element={<Checkout />} />
                 <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
+                <Route path="about" element={<About />} />
+                <Route path="contact" element={<Contact />} />
+                <Route path="*" element={<NotFound />} />
 
                 {/* User Dashboard Routes */}
                 <Route path="dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>}>
                     <Route index element={<Navigate to="/dashboard/orders" />} />
                     <Route path="orders" element={<OrderHistory />} />
                     <Route path="orders/:orderId" element={<OrderDetails />} />
+                    <Route path="wishlist" element={<Wishlist />} />
                     <Route path="profile" element={<UserProfile />} />
                 </Route>
             </Route>

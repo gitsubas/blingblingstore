@@ -14,7 +14,7 @@ export function ProductEditor() {
         name: "",
         price: "",
         category: "",
-        image: "",
+        images: [] as string[],
         description: "",
     });
 
@@ -26,7 +26,7 @@ export function ProductEditor() {
                     name: product.name,
                     price: product.price.toString(),
                     category: product.category,
-                    image: product.image,
+                    images: product.images || [product.image],
                     description: product.description,
                 });
             }
@@ -40,7 +40,8 @@ export function ProductEditor() {
             name: formData.name,
             price: parseFloat(formData.price),
             category: formData.category,
-            image: formData.image,
+            image: formData.images[0] || "",
+            images: formData.images,
             description: formData.description,
         };
 
@@ -92,13 +93,99 @@ export function ProductEditor() {
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Image URL</label>
-                    <Input
-                        value={formData.image}
-                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                        required
-                    />
+                <div className="space-y-4">
+                    <label className="text-sm font-medium">Product Images</label>
+
+                    {/* Image Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        {formData.images.map((img, index) => (
+                            <div key={index} className="relative group aspect-square border rounded-lg overflow-hidden bg-gray-50">
+                                <img
+                                    src={img}
+                                    alt={`Product ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const newImages = formData.images.filter((_, i) => i !== index);
+                                        setFormData({ ...formData, images: newImages });
+                                    }}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                                {index === 0 && (
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-1">
+                                        Main Image
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {/* Upload Button */}
+                        <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors aspect-square">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mb-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <span className="text-xs text-gray-500">Upload Images</span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    files.forEach(file => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                            if (reader.result) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    images: [...prev.images, reader.result as string]
+                                                }));
+                                            }
+                                        };
+                                        reader.readAsDataURL(file);
+                                    });
+                                }}
+                            />
+                        </label>
+                    </div>
+
+                    {/* URL Input */}
+                    <div className="flex gap-2">
+                        <Input
+                            placeholder="Add Image URL"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const input = e.currentTarget;
+                                    if (input.value) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            images: [...prev.images, input.value]
+                                        }));
+                                        input.value = '';
+                                    }
+                                }
+                            }}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={(e) => {
+                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                if (input.value) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        images: [...prev.images, input.value]
+                                    }));
+                                    input.value = '';
+                                }
+                            }}
+                        >
+                            Add URL
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="space-y-2">

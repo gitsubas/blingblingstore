@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, User, LogOut, Package, UserCircle } from "lucide-react";
+import { ShoppingCart, Search, Menu, User, LogOut, Package, UserCircle, Heart } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useState } from "react";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
 import logo from "../../assets/logo.jpg";
 
 const categories = [
@@ -19,6 +20,7 @@ const categories = [
 
 export function Navbar() {
     const { itemCount } = useCart();
+    const { wishlist } = useWishlist();
     const { user, isAuthenticated, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -87,6 +89,17 @@ export function Navbar() {
                                 {itemCount > 0 && (
                                     <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center">
                                         {itemCount}
+                                    </span>
+                                )}
+                            </Button>
+                        </Link>
+
+                        <Link to="/dashboard/wishlist">
+                            <Button variant="ghost" size="sm" className="relative">
+                                <Heart className="h-5 w-5" />
+                                {wishlist.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                        {wishlist.length}
                                     </span>
                                 )}
                             </Button>
