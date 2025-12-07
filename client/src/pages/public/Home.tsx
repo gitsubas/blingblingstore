@@ -27,7 +27,7 @@ const categories = [
 
 export function Home() {
     const { products } = useProducts();
-    const featuredProducts = products.slice(0, 4);
+    const featuredProducts = products.slice(0, 8);
     const [isExpanded, setIsExpanded] = useState(false);
 
     const displayedCategories = isExpanded ? categories : categories.slice(0, 4);
