@@ -3,6 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useProducts } from "../../context/ProductsContext";
+import { ProductAttribute, ProductVariant } from "../../context/CartContext";
+import { Plus, Trash2, RefreshCw } from "lucide-react";
+
+// Local interface for form handling
+interface FormAttribute {
+    name: string;
+    values: string; // Keep as string for editing
+}
 
 export function ProductEditor() {
     const { id } = useParams();
@@ -16,7 +24,18 @@ export function ProductEditor() {
         category: "",
         images: [] as string[],
         description: "",
+        stock: "",
+        lowStockThreshold: "5",
+        attributes: [] as FormAttribute[],
+        variants: [] as ProductVariant[],
     });
+
+    // Derive categories for suggestions
+    const defaultCategories = ["Decor", "Paintings", "Vases", "Cosmetics", "Apparel", "Jewelry", "Bags"];
+    const allCategories = Array.from(new Set([
+        ...defaultCategories,
+        ...products.map(p => p.category)
+    ])).sort();
 
     useEffect(() => {
         if (isEditMode) {
@@ -28,6 +47,13 @@ export function ProductEditor() {
                     category: product.category,
                     images: product.images || [product.image],
                     description: product.description,
+                    stock: product.stock?.toString() || "",
+                    lowStockThreshold: product.lowStockThreshold?.toString() || "5",
+                    attributes: product.attributes?.map(a => ({
+                        name: a.name,
+                        values: a.values.join(", ")
+                    })) || [],
+                    variants: product.variants || [],
                 });
             }
         }
@@ -36,6 +62,11 @@ export function ProductEditor() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
+        const attributes: ProductAttribute[] = formData.attributes.map(a => ({
+            name: a.name,
+            values: a.values.split(",").map(v => v.trim()).filter(Boolean)
+        })).filter(a => a.name && a.values.length > 0);
+
         const productData = {
             name: formData.name,
             price: parseFloat(formData.price),
@@ -43,6 +74,10 @@ export function ProductEditor() {
             image: formData.images[0] || "",
             images: formData.images,
             description: formData.description,
+            stock: formData.stock ? parseInt(formData.stock) : undefined,
+            lowStockThreshold: formData.lowStockThreshold ? parseInt(formData.lowStockThreshold) : 5,
+            attributes: attributes,
+            variants: formData.variants,
         };
 
         if (isEditMode && id) {
@@ -51,7 +86,7 @@ export function ProductEditor() {
             addProduct(productData);
         }
 
-        navigate("/admin");
+        navigate("/admin/products");
     };
 
     return (
@@ -86,10 +121,17 @@ export function ProductEditor() {
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Category</label>
                         <Input
+                            list="categories"
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                             required
+                            placeholder="Select or type new category"
                         />
+                        <datalist id="categories">
+                            {allCategories.map(cat => (
+                                <option key={cat} value={cat} />
+                            ))}
+                        </datalist>
                     </div>
                 </div>
 
@@ -187,6 +229,213 @@ export function ProductEditor() {
                         </Button>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Stock Quantity</label>
+                        <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="Available stock"
+                            value={formData.stock}
+                            onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                        />
+                        <p className="text-xs text-gray-500">Leave empty for unlimited stock</p>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Low Stock Threshold</label>
+                        <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={formData.lowStockThreshold}
+                            onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
+                        />
+                        <p className="text-xs text-gray-500">Show warning when stock is below this</p>
+                    </div>
+                </div>
+
+                {/* Stock Status Indicator */}
+                {formData.stock && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-sm font-medium mb-2">Current Stock Status:</p>
+                        {parseInt(formData.stock) === 0 ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                Out of Stock
+                            </span>
+                        ) : parseInt(formData.stock) <= parseInt(formData.lowStockThreshold || "5") ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                                Low Stock ({formData.stock} units)
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                In Stock ({formData.stock} units)
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                {/* Attributes Section */}
+                <div className="space-y-4 border-t pt-6">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium">Product Attributes</h3>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setFormData(prev => ({
+                                ...prev,
+                                attributes: [...prev.attributes, { name: "", values: "" }]
+                            }))}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Attribute
+                        </Button>
+                    </div>
+
+                    {formData.attributes.map((attr, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
+                            <div className="flex gap-3">
+                                <Input
+                                    placeholder="Attribute Name (e.g. Size)"
+                                    value={attr.name}
+                                    onChange={(e) => {
+                                        const newAttrs = [...formData.attributes];
+                                        newAttrs[index].name = e.target.value;
+                                        setFormData({ ...formData, attributes: newAttrs });
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="text-red-500"
+                                    onClick={() => {
+                                        const newAttrs = formData.attributes.filter((_, i) => i !== index);
+                                        setFormData({ ...formData, attributes: newAttrs });
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div>
+                                <Input
+                                    placeholder="Values (comma separated, e.g. S, M, L)"
+                                    value={attr.values}
+                                    onChange={(e) => {
+                                        const newAttrs = [...formData.attributes];
+                                        newAttrs[index].values = e.target.value;
+                                        setFormData({ ...formData, attributes: newAttrs });
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Variants Section */}
+                {formData.attributes.length > 0 && (
+                    <div className="space-y-4 border-t pt-6">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-medium">Variants</h3>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    // Generate variants logic
+                                    if (formData.attributes.length === 0) return;
+
+                                    // Parse attributes from string to array for generation
+                                    const parsedAttributes: ProductAttribute[] = formData.attributes.map(a => ({
+                                        name: a.name,
+                                        values: a.values.split(",").map(v => v.trim()).filter(Boolean)
+                                    })).filter(a => a.name && a.values.length > 0);
+
+                                    if (parsedAttributes.length === 0) return;
+
+                                    const generateCombinations = (attributes: ProductAttribute[], current: { [key: string]: string } = {}): { [key: string]: string }[] => {
+                                        if (attributes.length === 0) return [current];
+                                        const [first, ...rest] = attributes;
+                                        const combinations: { [key: string]: string }[] = [];
+
+                                        for (const value of first.values) {
+                                            combinations.push(...generateCombinations(rest, { ...current, [first.name]: value }));
+                                        }
+                                        return combinations;
+                                    };
+
+                                    const combinations = generateCombinations(parsedAttributes);
+                                    const newVariants: ProductVariant[] = combinations.map(combo => {
+                                        // Check if variant already exists to preserve price/stock
+                                        const existing = formData.variants.find(v =>
+                                            JSON.stringify(v.attributes) === JSON.stringify(combo)
+                                        );
+
+                                        return existing || {
+                                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                                            attributes: combo,
+                                            price: parseFloat(formData.price) || 0,
+                                            stock: 0
+                                        };
+                                    });
+
+                                    setFormData({ ...formData, variants: newVariants });
+                                }}
+                            >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Generate Variants
+                            </Button>
+                        </div>
+
+                        {formData.variants.length > 0 && (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3">Variant</th>
+                                            <th className="px-4 py-3">Price</th>
+                                            <th className="px-4 py-3">Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {formData.variants.map((variant, index) => (
+                                            <tr key={variant.id} className="border-b">
+                                                <td className="px-4 py-3 font-medium">
+                                                    {Object.entries(variant.attributes).map(([key, val]) => `${key}: ${val}`).join(", ")}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <Input
+                                                        type="number"
+                                                        className="w-24"
+                                                        value={variant.price}
+                                                        onChange={(e) => {
+                                                            const newVariants = [...formData.variants];
+                                                            newVariants[index].price = parseFloat(e.target.value);
+                                                            setFormData({ ...formData, variants: newVariants });
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <Input
+                                                        type="number"
+                                                        className="w-24"
+                                                        value={variant.stock}
+                                                        onChange={(e) => {
+                                                            const newVariants = [...formData.variants];
+                                                            newVariants[index].stock = parseInt(e.target.value);
+                                                            setFormData({ ...formData, variants: newVariants });
+                                                        }}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Description</label>

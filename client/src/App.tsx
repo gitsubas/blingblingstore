@@ -14,6 +14,7 @@ import { Contact } from "./pages/public/Contact";
 import { NotFound } from "./pages/public/NotFound";
 import { Dashboard } from "./pages/admin/Dashboard";
 import { ProductEditor } from "./pages/admin/ProductEditor";
+import { ProductManagement } from "./pages/admin/ProductManagement";
 import { UserManagement } from "./pages/admin/UserManagement";
 import { UserEditor } from "./pages/admin/UserEditor";
 import { OrderManagement } from "./pages/admin/OrderManagement";
@@ -88,7 +89,7 @@ function App() {
                 <Route path="orders" element={<OrderManagement />} />
                 <Route path="orders/:orderId" element={<OrderDetailAdmin />} />
                 <Route path="payments" element={<PaymentManagement />} />
-                <Route path="products" element={<Dashboard />} />
+                <Route path="products" element={<ProductManagement />} />
                 <Route path="products/new" element={<ProductEditor />} />
                 <Route path="products/:id" element={<ProductEditor />} />
             </Route>

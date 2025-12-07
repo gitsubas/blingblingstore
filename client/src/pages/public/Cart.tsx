@@ -25,66 +25,90 @@ export function Cart() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Cart Items */}
                 <div className="lg:col-span-2 space-y-4">
-                    {items.map((item) => (
-                        <div
-                            key={item.id}
-                            className="flex gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm"
-                        >
-                            <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                                <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="h-full w-full object-cover object-center"
-                                />
-                            </div>
+                    {items.map((item) => {
+                        const stock = item.selectedVariant ? item.selectedVariant.stock : (item.stock ?? Infinity);
+                        const isAtStockLimit = item.quantity >= stock;
+                        const isLowStock = stock > 0 && stock <= (item.lowStockThreshold ?? 5);
 
-                            <div className="flex flex-1 flex-col justify-between">
-                                <div>
-                                    <div className="flex justify-between text-base font-medium text-gray-900">
-                                        <h3>
-                                            <Link to={`/product/${item.id}`} className="hover:text-primary">
-                                                {item.name}
-                                            </Link>
-                                        </h3>
-                                        <p className="ml-4">Rs. {(item.price * item.quantity).toFixed(2)}</p>
-                                    </div>
-                                    <p className="mt-1 text-sm text-gray-500">{item.category}</p>
+                        return (
+                            <div
+                                key={item.id}
+                                className="flex gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm"
+                            >
+                                <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="h-full w-full object-cover object-center"
+                                    />
                                 </div>
-                                <div className="flex flex-1 items-end justify-between text-sm">
-                                    <div className="flex items-center gap-2">
+
+                                <div className="flex flex-1 flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between text-base font-medium text-gray-900">
+                                            <h3>
+                                                <Link to={`/product/${item.id}`} className="hover:text-primary">
+                                                    {item.name}
+                                                </Link>
+                                            </h3>
+                                            <p className="ml-4">Rs. {(item.price * item.quantity).toFixed(2)}</p>
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">{item.category}</p>
+                                        {item.selectedVariant && (
+                                            <p className="mt-1 text-sm text-gray-600">
+                                                {Object.entries(item.selectedVariant.attributes)
+                                                    .map(([key, val]) => `${key}: ${val}`)
+                                                    .join(", ")}
+                                            </p>
+                                        )}
+                                        {isLowStock && (
+                                            <p className="mt-1 text-xs text-orange-600 font-medium">
+                                                Only {stock} available
+                                            </p>
+                                        )}
+                                        {isAtStockLimit && stock !== Infinity && (
+                                            <p className="mt-1 text-xs text-red-600 font-medium">
+                                                Maximum quantity reached
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-1 items-end justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => updateQuantity(item.id, item.quantity - 1, item.selectedVariant?.id)}
+                                                disabled={item.quantity <= 1}
+                                            >
+                                                <Minus className="h-3 w-3" />
+                                            </Button>
+                                            <span className="font-medium w-8 text-center">{item.quantity}</span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedVariant?.id)}
+                                                disabled={isAtStockLimit}
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                            disabled={item.quantity <= 1}
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => removeFromCart(item.id, item.selectedVariant?.id)}
                                         >
-                                            <Minus className="h-3 w-3" />
-                                        </Button>
-                                        <span className="font-medium w-8 text-center">{item.quantity}</span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                        >
-                                            <Plus className="h-3 w-3" />
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Remove
                                         </Button>
                                     </div>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => removeFromCart(item.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Remove
-                                    </Button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     <div className="flex justify-end">
                         <Button variant="ghost" onClick={clearCart} className="text-red-600">

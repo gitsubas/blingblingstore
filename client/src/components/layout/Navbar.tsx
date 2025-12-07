@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, User, LogOut, Package, UserCircle, Heart } from "lucide-react";
+import { ShoppingCart, Search, Menu, User, LogOut, Package, UserCircle, Heart, LayoutDashboard } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useState } from "react";
@@ -94,7 +94,7 @@ export function Navbar() {
                             </Button>
                         </Link>
 
-                        <Link to="/dashboard/wishlist">
+                        <Link to={isAuthenticated ? "/dashboard/wishlist" : "/login?redirect=/dashboard/wishlist"}>
                             <Button variant="ghost" size="sm" className="relative">
                                 <Heart className="h-5 w-5" />
                                 {wishlist.length > 0 && (
@@ -123,14 +123,25 @@ export function Navbar() {
                                                 <p className="text-sm font-medium text-gray-900">{user?.username}</p>
                                                 <p className="text-xs text-gray-500">{user?.email}</p>
                                             </div>
-                                            <Link
-                                                to="/dashboard/orders"
-                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                                onClick={() => setIsUserMenuOpen(false)}
-                                            >
-                                                <Package className="h-4 w-4" />
-                                                My Orders
-                                            </Link>
+                                            {user?.role === "admin" ? (
+                                                <Link
+                                                    to="/admin"
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                    onClick={() => setIsUserMenuOpen(false)}
+                                                >
+                                                    <LayoutDashboard className="h-4 w-4" />
+                                                    Admin Dashboard
+                                                </Link>
+                                            ) : (
+                                                <Link
+                                                    to="/dashboard/orders"
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                    onClick={() => setIsUserMenuOpen(false)}
+                                                >
+                                                    <Package className="h-4 w-4" />
+                                                    My Orders
+                                                </Link>
+                                            )}
                                             <Link
                                                 to="/dashboard/profile"
                                                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -201,6 +212,6 @@ export function Navbar() {
                     </div>
                 )}
             </div>
-        </header>
+        </header >
     );
 }

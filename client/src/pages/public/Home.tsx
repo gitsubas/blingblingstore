@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { ProductCard } from "../../components/ui/ProductCard";
@@ -7,6 +8,10 @@ import sculptureImg from "../../assets/products/sculpture.jpg";
 import scarfImg from "../../assets/products/scarf.jpg";
 import banglesImg from "../../assets/products/bangles.jpg";
 import lipstickImg from "../../assets/products/lipstick.jpg";
+import paintingImg from "../../assets/products/painting.jpg";
+import vaseImg from "../../assets/products/vase.jpg";
+import bagImg from "../../assets/products/bag.jpg";
+import earringsImg from "../../assets/products/earrings.jpg";
 import heroImg from "../../assets/hero.jpg";
 
 const categories = [
@@ -14,11 +19,18 @@ const categories = [
     { name: "Apparel", image: scarfImg },
     { name: "Jewelry", image: banglesImg },
     { name: "Cosmetics", image: lipstickImg },
+    { name: "Paintings", image: paintingImg },
+    { name: "Vases", image: vaseImg },
+    { name: "Bags", image: bagImg },
+    { name: "Earrings", image: earringsImg },
 ];
 
 export function Home() {
     const { products } = useProducts();
     const featuredProducts = products.slice(0, 4);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const displayedCategories = isExpanded ? categories : categories.slice(0, 4);
 
     return (
         <div className="space-y-20">
@@ -49,11 +61,19 @@ export function Home() {
 
             {/* Featured Categories */}
             <section>
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">
-                    Shop by Category
-                </h2>
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                        Shop by Category
+                    </h2>
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-primary hover:text-primary-hover font-medium bg-transparent border-none cursor-pointer text-base"
+                    >
+                        {isExpanded ? "Collapse" : "Expand All"}
+                    </button>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {categories.map((cat) => (
+                    {displayedCategories.map((cat) => (
                         <Link
                             key={cat.name}
                             to={`/shop?category=${cat.name}`}

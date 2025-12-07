@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product } from "./CartContext";
+import { useAuth } from "./AuthContext";
 
 interface WishlistContextType {
     wishlist: Product[];
@@ -12,6 +13,7 @@ interface WishlistContextType {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
+    const { user } = useAuth();
     const [wishlist, setWishlist] = useState<Product[]>(() => {
         const savedWishlist = localStorage.getItem("wishlist");
         if (savedWishlist) {
@@ -24,6 +26,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         }
         return [];
     });
+
+    // Clear wishlist when user logs out
+    useEffect(() => {
+        if (!user) {
+            setWishlist([]);
+            localStorage.removeItem("wishlist");
+        }
+    }, [user]);
 
     // Save wishlist to local storage on change
     // TODO: Migrate to backend persistence when backend is built

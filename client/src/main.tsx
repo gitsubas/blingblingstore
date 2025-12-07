@@ -1,12 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import App from './App.tsx'
-import { CartProvider } from './context/CartContext.tsx'
-import { AuthProvider } from './context/AuthContext.tsx'
-import { OrdersProvider } from './context/OrdersContext.tsx'
-import { ProductsProvider } from './context/ProductsContext.tsx'
-import { WishlistProvider } from './context/WishlistContext.tsx'
+import App from './App'
+import { CartProvider } from './context/CartContext'
+import { AuthProvider } from './context/AuthContext'
+import { OrdersProvider } from './context/OrdersContext'
+import { ProductsProvider } from './context/ProductsContext'
+import { WishlistProvider } from './context/WishlistContext'
+import { RecentlyViewedProvider } from './context/RecentlyViewedContext'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -14,13 +15,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
             <AuthProvider>
                 <ProductsProvider>
-                    <OrdersProvider>
-                        <CartProvider>
+                    <CartProvider>
+                        <OrdersProvider>
                             <WishlistProvider>
-                                <App />
+                                <RecentlyViewedProvider>
+                                    <App />
+                                </RecentlyViewedProvider>
                             </WishlistProvider>
-                        </CartProvider>
-                    </OrdersProvider>
+                        </OrdersProvider>
+                    </CartProvider>
                 </ProductsProvider>
             </AuthProvider>
         </BrowserRouter>

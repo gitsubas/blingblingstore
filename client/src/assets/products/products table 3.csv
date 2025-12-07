@@ -1,0 +1,7 @@
+Name,Price,Category,Description ,Stock ,Image,variant_type,variant_value,variant_price,variant_stock
+“P1”,100,“Decor”,“Test Description”,50,"""https://images.unsplash.com/photo-1764385827457-b6d611b54d36?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D""",,,,
+Variant product,500,Clothing,Cotton T-Shirt,100,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000,Size,S,500,20
+Variant product,500,Clothing,Cotton T-Shirt,100,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000,Size,M,550,50
+Variant product,500,Clothing,Cotton T-Shirt,100,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000,Size,L,550,15
+Variant product,500,Clothing,Cotton T-Shirt,100,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000,Color,Red,500,10
+Variant product,500,Clothing,Cotton T-Shirt,100,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000,Color,Blue,500,10

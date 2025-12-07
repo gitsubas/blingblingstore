@@ -23,6 +23,8 @@ export const products: Product[] = [
         description: "A stunning hand-crafted abstract sculpture that adds a modern touch to any room. Made from sustainable materials.",
         rating: 4.8,
         reviews: 12,
+        stock: 10,
+        lowStockThreshold: 5,
     },
     {
         id: "2",
@@ -39,6 +41,8 @@ export const products: Product[] = [
         description: "Original oil painting featuring vibrant floral patterns. Perfect for living rooms or bedrooms.",
         rating: 4.5,
         reviews: 8,
+        stock: 10,
+        lowStockThreshold: 5,
     },
     {
         id: "3",
@@ -50,6 +54,8 @@ export const products: Product[] = [
         description: "Hand-thrown ceramic vase with a matte white finish. Ideal for dried flowers or standalone display.",
         rating: 4.2,
         reviews: 25,
+        stock: 50,
+        lowStockThreshold: 5,
     },
     {
         id: "4",
@@ -65,6 +71,8 @@ export const products: Product[] = [
         description: "Long-lasting matte lipstick in a classic red shade. Enriched with Vitamin E for hydration.",
         rating: 4.9,
         reviews: 150,
+        stock: 100,
+        lowStockThreshold: 5,
     },
     {
         id: "5",
@@ -75,6 +83,8 @@ export const products: Product[] = [
         description: "100% silk scarf with a delicate floral print. Soft, breathable, and elegant.",
         rating: 4.6,
         reviews: 32,
+        stock: 50,
+        lowStockThreshold: 5,
     },
     {
         id: "6",
@@ -90,6 +100,8 @@ export const products: Product[] = [
         description: "Set of 3 gold-plated bangles with intricate detailing. Hypoallergenic and tarnish-resistant.",
         rating: 4.7,
         reviews: 45,
+        stock: 50,
+        lowStockThreshold: 5,
     },
     {
         id: "7",
@@ -106,6 +118,8 @@ export const products: Product[] = [
         description: "Genuine leather crossbody bag with adjustable strap. Compact yet spacious enough for essentials.",
         rating: 4.4,
         reviews: 67,
+        stock: 50,
+        lowStockThreshold: 5,
     },
     {
         id: "8",
@@ -116,6 +130,8 @@ export const products: Product[] = [
         description: "Statement chandelier earrings with sparkling crystals. Perfect for evening wear.",
         rating: 4.3,
         reviews: 18,
+        stock: 50,
+        lowStockThreshold: 5,
     },
 ];
 

@@ -5,9 +5,9 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useProducts } from "../../context/ProductsContext";
 import { cn } from "../../lib/utils";
-import { Star, X } from "lucide-react";
+import { Star, X, Filter } from "lucide-react";
 
-const categories = [
+const defaultCategories = [
     "Decor",
     "Paintings",
     "Vases",
@@ -60,6 +60,12 @@ export function Shop() {
             setSortBy(sortParam);
         }
     }, [searchParams]);
+
+    // Derive all unique categories from products and default list
+    const allCategories = Array.from(new Set([
+        ...defaultCategories,
+        ...products.map(p => p.category)
+    ])).sort();
 
     const searchQuery = searchParams.get("search") || "";
 
@@ -198,6 +204,15 @@ export function Shop() {
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="lg:hidden"
+                        onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+                    >
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filters
+                    </Button>
                     <select
                         className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white"
                         value={sortBy}
@@ -218,12 +233,12 @@ export function Shop() {
 
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Sidebar Filters */}
-                <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
+                <aside className={cn("w-full lg:w-64 flex-shrink-0 space-y-8", isMobileFiltersOpen ? "block" : "hidden lg:block")}>
                     {/* Categories */}
                     <div>
                         <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
                         <div className="space-y-2">
-                            {categories.map((cat) => (
+                            {allCategories.map((cat) => (
                                 <label key={cat} className="flex items-center space-x-2 cursor-pointer group">
                                     <input
                                         type="checkbox"

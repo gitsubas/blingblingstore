@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Menu, LogOut, User } from "lucide-react";
+import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import { Menu, LogOut, User, Home } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "../../context/AuthContext";
 
@@ -48,6 +48,13 @@ export function AdminLayout() {
                             <User className="h-4 w-4" />
                             <span>{user?.username}</span>
                         </div>
+                        <Link
+                            to="/"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                            <Home className="h-4 w-4" />
+                            <span>Home</span>
+                        </Link>
                         <button
                             onClick={handleLogout}
                             className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"

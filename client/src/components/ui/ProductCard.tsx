@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Card, CardContent, CardFooter } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Product, useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import { useAuth } from "../../context/AuthContext";
 
 interface ProductCardProps {
     product: Product;
@@ -14,8 +15,16 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCart();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
     const images = product.images && product.images.length > 0 ? product.images : [product.image];
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // Stock status logic
+    const stock = product.stock ?? Infinity; // Default to unlimited if not set
+    const lowStockThreshold = product.lowStockThreshold ?? 5;
+    const isOutOfStock = stock === 0;
+    const isLowStock = stock > 0 && stock <= lowStockThreshold;
 
     const goToNext = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -44,10 +53,20 @@ export function ProductCard({ product }: ProductCardProps) {
                         alt={`${product.name} - Image ${currentImageIndex + 1}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-2 right-2 flex flex-col gap-2">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                             {product.category}
                         </Badge>
+                        {isOutOfStock && (
+                            <Badge variant="destructive" className="bg-red-500/90 backdrop-blur-sm text-white">
+                                Out of Stock
+                            </Badge>
+                        )}
+                        {isLowStock && (
+                            <Badge variant="default" className="bg-orange-500/90 backdrop-blur-sm text-white">
+                                Low Stock
+                            </Badge>
+                        )}
                     </div>
 
                     {/* Navigation Arrows - Only show if multiple images */}
@@ -110,14 +129,19 @@ export function ProductCard({ product }: ProductCardProps) {
                 <Button
                     className="flex-1"
                     onClick={() => addToCart(product)}
+                    disabled={isOutOfStock}
                 >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart
+                    {isOutOfStock ? "Out of Stock" : "Add to Cart"}
                 </Button>
                 <Button
                     variant="outline"
                     className={`px-3 ${isInWishlist(product.id) ? "text-red-500 hover:text-red-600" : ""}`}
                     onClick={() => {
+                        if (!isAuthenticated) {
+                            navigate("/login?redirect=/shop"); // Or current page
+                            return;
+                        }
                         if (isInWishlist(product.id)) {
                             removeFromWishlist(product.id);
                         } else {

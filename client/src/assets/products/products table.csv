@@ -1,0 +1,7 @@
+Name,Price,Category,Description ,Stock ,Image,variant_type,variant_value,variant_price,variant_stock
+“P1”,100,“Decor”,“Test Description”,50,"p1.jpg, p1_detail.jpg",,,,
+"P2 Shirt",500,"Clothing","Cotton T-Shirt",100,"shirt.jpg","Size","S",500,20
+"P2 Shirt",500,"Clothing","Cotton T-Shirt",100,"shirt.jpg","Size","M",550,50
+"P2 Shirt",500,"Clothing","Cotton T-Shirt",100,"shirt.jpg","Size","L",550,15
+"P2 Shirt",500,"Clothing","Cotton T-Shirt",100,"shirt.jpg","Color","Red",500,10
+"P2 Shirt",500,"Clothing","Cotton T-Shirt",100,"shirt.jpg","Color","Blue",500,10

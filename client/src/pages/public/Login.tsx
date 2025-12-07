@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -12,16 +12,22 @@ export function Login() {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const message = (location.state as any)?.message;
+    const redirectTo = searchParams.get("redirect") || null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
 
-        const success = await login(email, password);
+        const success = await login(email, password, redirectTo);
 
-        if (!success) {
+        if (success && redirectTo) {
+            // Navigate to redirect URL after successful login
+            navigate(redirectTo);
+        } else if (!success) {
             setError("Invalid email or password");
         }
         setLoading(false);

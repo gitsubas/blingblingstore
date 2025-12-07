@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Address } from "../types/Address";
 
 export interface User {
     id: string;
@@ -7,14 +8,17 @@ export interface User {
     email: string;
     role: "user" | "admin";
     createdAt: string;
+    shippingAddresses?: Address[];
+    profilePicture?: string;
 }
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => Promise<boolean>;
+    login: (email: string, password: string, redirectTo?: string | null) => Promise<boolean>;
     signup: (username: string, email: string, password: string) => Promise<boolean>;
     logout: () => void;
     resetPassword: (email: string) => Promise<boolean>;
+    changePassword: (password: string) => Promise<boolean>;
     isAuthenticated: boolean;
     isAdmin: boolean;
     // Admin-only methods
@@ -55,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email,
             role: "user",
             createdAt: new Date().toISOString(),
+            shippingAddresses: [],
         };
 
         // Store password separately (in production, this would be hashed on backend)
@@ -74,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
     };
 
-    const login = async (email: string, password: string): Promise<boolean> => {
+    const login = async (email: string, password: string, redirectTo?: string | null): Promise<boolean> => {
         // Handle admin login
         if (email === "admin" && password === "admin") {
             const adminUser: User = {
@@ -83,11 +88,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: "admin@store.com",
                 role: "admin",
                 createdAt: new Date().toISOString(),
+                shippingAddresses: [],
             };
             setUser(adminUser);
             localStorage.setItem("currentUser", JSON.stringify(adminUser));
             // Defer navigation to allow React state to update
-            setTimeout(() => navigate("/admin"), 0);
+            // Only navigate if no redirect is specified (redirect will be handled by Login component)
+            if (!redirectTo) {
+                setTimeout(() => navigate("/admin"), 0);
+            }
             return true;
         }
 
@@ -102,7 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (foundUser) {
                 setUser(foundUser);
                 localStorage.setItem("currentUser", JSON.stringify(foundUser));
-                setTimeout(() => navigate("/"), 0);
+                // Only navigate if no redirect is specified (redirect will be handled by Login component)
+                if (!redirectTo) {
+                    setTimeout(() => navigate("/"), 0);
+                }
                 return true;
             }
         }
@@ -123,6 +135,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return userExists;
     };
 
+    const changePassword = async (password: string): Promise<boolean> => {
+        if (!user) return false;
+
+        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
+        const userCredIndex = credentials.findIndex((c: any) => c.userId === user.id);
+
+        if (userCredIndex === -1) return false;
+
+        credentials[userCredIndex].password = password;
+        localStorage.setItem("userCredentials", JSON.stringify(credentials));
+        return true;
+    };
+
     // Admin-only methods
     const getAllUsers = (): User[] => {
         if (!user || user.role !== "admin") return [];
@@ -131,7 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const updateUser = (userId: string, data: Partial<Omit<User, 'id'>>): boolean => {
-        if (!user || user.role !== "admin") return false;
+        if (!user) return false;
+        // Allow admin to update anyone, or user to update themselves
+        if (user.role !== "admin" && user.id !== userId) return false;
 
         const users = JSON.parse(localStorage.getItem("users") || "[]");
         const userIndex = users.findIndex((u: User) => u.id === userId);
@@ -193,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email,
             role,
             createdAt: new Date().toISOString(),
+            shippingAddresses: [],
         };
 
         const userCredentials = {
@@ -219,6 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 signup,
                 logout,
                 resetPassword,
+                changePassword,
                 isAuthenticated: !!user,
                 isAdmin: user?.role === "admin",
                 // Admin methods
