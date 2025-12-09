@@ -18,9 +18,11 @@ app.get('/', (req, res) => {
 
 import authRoutes from './modules/auth/auth.routes';
 import productRoutes from './modules/product/product.routes';
+import orderRoutes from './modules/order/order.routes';
 
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

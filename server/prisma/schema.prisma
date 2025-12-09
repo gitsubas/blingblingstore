@@ -46,8 +46,10 @@ model Product {
   price       Float
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
+  stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
 
   images   ProductImage[]
   variants ProductVariant[]
@@ -91,16 +93,21 @@ model Review {
 
 // Order models
 model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  total     Float
-  status    String      @default("PENDING") // PENDING, PAID, PROCESSING, SHIPPED, DELIVERED, CANCELLED
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  total           Float
+  status          String      @default("PENDING") // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, RETURN_REQUESTED, RETURNED
+  paymentStatus   String      @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  paymentMethod   String      @default("COD") // COD, KHALTI, ESEWA
+  shippingAddress Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   
   items     OrderItem[]
   timeline  OrderTimeline[]
+  payments  Payment[]
+  returns   ReturnRequest[]
 }
 
 model OrderItem {
@@ -120,4 +127,26 @@ model OrderTimeline {
   status    String
   note      String?
   createdAt DateTime @default(now())
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  provider      String   // KHALTI, ESEWA, COD
+  transactionId String?
+  amount        Float
+  status        String   // PENDING, COMPLETED, FAILED
+  createdAt     DateTime @default(now())
+}
+
+model ReturnRequest {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  reason    String
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  refundAmount Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -46,7 +46,7 @@ export function ProductManagement() {
             header: true,
             skipEmptyLines: true,
             transformHeader: (header) => header.toLowerCase().trim(), // Normalize headers
-            transform: (value, field) => { // Trim all values
+            transform: (value) => { // Trim all values
                 if (typeof value === 'string') {
                     return value.trim();
                 }
