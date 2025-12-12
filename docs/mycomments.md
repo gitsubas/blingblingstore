@@ -6,3 +6,4 @@
 6. When I click on 'create product' or 'update product', the dashboard is opening up instead of the updated product page. [DONE]
 7. admin can import products from a csv file. [DONE]
 8. Backend API missing: Auth: Reset Password, Product: review, 
+9. User loacation input as map also.

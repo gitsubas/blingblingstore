@@ -9,30 +9,33 @@ import { Modal } from "../../components/ui/Modal";
 import { useOrders, Order } from "../../context/OrdersContext";
 
 export function OrderManagement() {
-    const { getAllOrders, deleteOrder, updateOrderStatus } = useOrders();
+    const { orders, cancelOrder } = useOrders();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; orderId?: string }>({
         isOpen: false,
     });
 
-    const orders = getAllOrders();
+    // Use empty array as fallback
+    const allOrders = orders || [];
 
-    const filteredOrders = orders.filter((order) => {
+    const filteredOrders = allOrders.filter((order) => {
         const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || order.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (deleteModal.orderId) {
-            deleteOrder(deleteModal.orderId);
+            await cancelOrder(deleteModal.orderId);
             setDeleteModal({ isOpen: false });
         }
     };
 
     const handleStatusChange = (orderId: string, newStatus: Order["status"]) => {
-        updateOrderStatus(orderId, newStatus);
+        // Note: updateOrderStatus doesn't exist in context
+        // For now, this is a placeholder - admin would need backend API to update order status
+        console.log(`Update order ${orderId} to status: ${newStatus}`);
     };
 
     const columns: Column<Order>[] = [

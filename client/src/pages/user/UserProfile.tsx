@@ -1,18 +1,20 @@
 import { useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { authService } from "../../services/api";
+import toast from "react-hot-toast";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { User, Mail, Calendar, MapPin, Camera, Plus, Trash2, Edit2, Save, X } from "lucide-react";
 import { Address } from "../../types/Address";
 
 export function UserProfile() {
-    const { user, logout, updateUser, changePassword } = useAuth();
+    const { user, logout, updateProfile, changePassword, refreshUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [activeTab, setActiveTab] = useState<"profile" | "security" | "address">("profile");
 
     // Profile Form State
     const [formData, setFormData] = useState({
-        username: user?.username || "",
+        name: user?.name || "",
         email: user?.email || "",
     });
 
@@ -38,35 +40,35 @@ export function UserProfile() {
 
     if (!user) return null;
 
-    const handleProfileUpdate = (e: React.FormEvent) => {
+    const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        const success = updateUser(user.id, formData);
+        const success = await updateProfile(formData);
         if (success) {
             setIsEditing(false);
-            alert("Profile updated successfully!");
+            toast.success("Profile updated successfully!");
         } else {
-            alert("Failed to update profile.");
+            toast.error("Failed to update profile.");
         }
     };
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            alert("New passwords do not match.");
+            toast.error("New passwords do not match.");
             return;
         }
 
-        // In a real app, we would verify currentPassword first.
-        // Since we don't have a backend endpoint to verify just the password without logging in,
-        // and our mock changePassword doesn't check current password (it just overwrites),
-        // we will proceed. In a real scenario, the backend would handle this check.
+        if (passwordData.newPassword.length < 6) {
+            toast.error("New password must be at least 6 characters long.");
+            return;
+        }
 
-        const success = await changePassword(passwordData.newPassword);
+        const success = await changePassword(passwordData.currentPassword, passwordData.newPassword);
         if (success) {
             setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            alert("Password changed successfully!");
+            toast.success("Password changed successfully! You can now use your new password to log in.");
         } else {
-            alert("Failed to change password.");
+            toast.error("Failed to change password. Please check your current password and try again.");
         }
     };
 
@@ -76,51 +78,61 @@ export function UserProfile() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64String = reader.result as string;
-                updateUser(user.id, { profilePicture: base64String });
+                updateProfile({ profilePicture: base64String });
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleAddAddress = (e: React.FormEvent) => {
+    const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault();
-        const address: Address = {
-            ...newAddress,
-            id: Date.now().toString(),
-        };
-
-        const currentAddresses = user.shippingAddresses || [];
-        // If this is the first address, make it default
-        if (currentAddresses.length === 0) {
-            address.isDefault = true;
+        try {
+            // Use the backend API to create the address
+            // Map zipCode to zip for backend compatibility
+            const addressData = {
+                street: newAddress.street,
+                city: newAddress.city,
+                state: newAddress.state,
+                zip: newAddress.zipCode, // Backend expects 'zip', frontend uses 'zipCode'
+                country: newAddress.country,
+                isDefault: newAddress.isDefault,
+            };
+            await authService.createAddress(addressData);
+            // Refresh user data to get the updated addresses
+            await refreshUser();
+            setIsAddingAddress(false);
+            setNewAddress({
+                street: "",
+                city: "",
+                state: "",
+                zipCode: "",
+                country: "",
+                isDefault: false,
+            });
+        } catch (error) {
+            console.error("Failed to add address:", error);
+            toast.error("Failed to add address. Please try again.");
         }
-
-        const updatedAddresses = [...currentAddresses, address];
-        updateUser(user.id, { shippingAddresses: updatedAddresses });
-        setIsAddingAddress(false);
-        setNewAddress({
-            street: "",
-            city: "",
-            state: "",
-            zipCode: "",
-            country: "",
-            isDefault: false,
-        });
     };
 
-    const handleDeleteAddress = (addressId: string) => {
-        const currentAddresses = user.shippingAddresses || [];
-        const updatedAddresses = currentAddresses.filter(a => a.id !== addressId);
-        updateUser(user.id, { shippingAddresses: updatedAddresses });
+    const handleDeleteAddress = async (addressId: string) => {
+        try {
+            await authService.deleteAddress(addressId);
+            await refreshUser();
+        } catch (error) {
+            console.error("Failed to delete address:", error);
+            toast.error("Failed to delete address. Please try again.");
+        }
     };
 
-    const handleSetDefaultAddress = (addressId: string) => {
-        const currentAddresses = user.shippingAddresses || [];
-        const updatedAddresses = currentAddresses.map(a => ({
-            ...a,
-            isDefault: a.id === addressId,
-        }));
-        updateUser(user.id, { shippingAddresses: updatedAddresses });
+    const handleSetDefaultAddress = async (addressId: string) => {
+        try {
+            await authService.setDefaultAddress(addressId);
+            await refreshUser();
+        } catch (error) {
+            console.error("Failed to set default address:", error);
+            toast.error("Failed to set default address. Please try again.");
+        }
     };
 
     return (
@@ -131,7 +143,7 @@ export function UserProfile() {
                         <div className="relative group">
                             <div className="h-24 w-24 rounded-full bg-primary-light flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
                                 {user.profilePicture ? (
-                                    <img src={user.profilePicture} alt={user.username} className="h-full w-full object-cover" />
+                                    <img src={user.profilePicture} alt={user.name} className="h-full w-full object-cover" />
                                 ) : (
                                     <User className="h-12 w-12 text-primary" />
                                 )}
@@ -151,7 +163,7 @@ export function UserProfile() {
                             />
                         </div>
                         <div className="text-center sm:text-left flex-1">
-                            <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
+                            <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
                             <p className="text-gray-500">{user.email}</p>
                             <p className="text-sm text-primary font-medium mt-1 capitalize">{user.role}</p>
                         </div>
@@ -174,12 +186,14 @@ export function UserProfile() {
                     >
                         Security
                     </button>
-                    <button
-                        className={`px-6 py-3 text-sm font-medium whitespace-nowrap ${activeTab === "address" ? "border-b-2 border-primary text-primary" : "text-gray-500 hover:text-gray-700"}`}
-                        onClick={() => setActiveTab("address")}
-                    >
-                        Shipping Addresses
-                    </button>
+                    {user.role !== 'ADMIN' && (
+                        <button
+                            className={`px-6 py-3 text-sm font-medium whitespace-nowrap ${activeTab === "address" ? "border-b-2 border-primary text-primary" : "text-gray-500 hover:text-gray-700"}`}
+                            onClick={() => setActiveTab("address")}
+                        >
+                            Shipping Addresses
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-6">
@@ -200,8 +214,8 @@ export function UserProfile() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                                         <Input
-                                            value={formData.username}
-                                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             required
                                         />
                                     </div>
@@ -231,7 +245,7 @@ export function UserProfile() {
                                         <User className="h-5 w-5 text-gray-400 mt-0.5" />
                                         <div>
                                             <p className="text-sm text-gray-500">Username</p>
-                                            <p className="font-medium text-gray-900">{user.username}</p>
+                                            <p className="font-medium text-gray-900">{user.name}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
@@ -246,11 +260,11 @@ export function UserProfile() {
                                         <div>
                                             <p className="text-sm text-gray-500">Member Since</p>
                                             <p className="font-medium text-gray-900">
-                                                {new Date(user.createdAt).toLocaleDateString("en-US", {
+                                                {user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", {
                                                     year: "numeric",
                                                     month: "long",
                                                     day: "numeric",
-                                                })}
+                                                }) : "N/A"}
                                             </p>
                                         </div>
                                     </div>
@@ -364,7 +378,7 @@ export function UserProfile() {
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {user.shippingAddresses?.map((address) => (
+                                {user.addresses?.map((address) => (
                                     <div key={address.id} className={`relative p-4 rounded-lg border ${address.isDefault ? 'border-primary bg-primary-light/10' : 'border-gray-200 hover:border-gray-300'}`}>
                                         {address.isDefault && (
                                             <span className="absolute top-2 right-2 px-2 py-1 bg-primary text-white text-xs rounded-full">Default</span>
@@ -395,7 +409,7 @@ export function UserProfile() {
                                         </div>
                                     </div>
                                 ))}
-                                {(!user.shippingAddresses || user.shippingAddresses.length === 0) && !isAddingAddress && (
+                                {(!user.addresses || user.addresses.length === 0) && !isAddingAddress && (
                                     <div className="col-span-full text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                                         No addresses saved yet.
                                     </div>

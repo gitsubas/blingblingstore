@@ -1,31 +1,30 @@
 import { Link } from "react-router-dom";
-import { Users, ShoppingCart, Package, DollarSign } from "lucide-react";
+import { ShoppingCart, Package, DollarSign } from "lucide-react";
 import { StatsCard } from "../../components/ui/StatsCard";
 import { useOrders } from "../../context/OrdersContext";
-import { useAuth } from "../../context/AuthContext";
 import { useProducts } from "../../context/ProductsContext";
 
 export function Dashboard() {
-    const { getAllOrders, getOrderStats } = useOrders();
-    const { getAllUsers } = useAuth();
+    const { orders } = useOrders();
     const { products } = useProducts();
 
-    const orders = getAllOrders();
-    const users = getAllUsers();
-    const stats = getOrderStats();
+    // Use empty array as fallback if orders is undefined
+    const allOrders = orders || [];
 
-    const recentOrders = orders.slice(0, 5);
+    // Calculate stats from orders
+    const stats = {
+        totalOrders: allOrders.length,
+        totalRevenue: allOrders.reduce((sum, order) => sum + order.total, 0),
+        pendingOrders: allOrders.filter(order => order.status === 'PENDING').length,
+        deliveredOrders: allOrders.filter(order => order.status === 'DELIVERED').length,
+    };
+
+    const recentOrders = allOrders.slice(0, 5);
 
     return (
         <div className="space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard
-                    title="Total Users"
-                    value={users.length}
-                    icon={Users}
-                    variant="blue"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard
                     title="Total Orders"
                     value={stats.totalOrders}
@@ -114,10 +113,10 @@ export function Dashboard() {
                                     <td className="px-4 py-3">
                                         <span
                                             className={`px-2 py-1 text-xs rounded-full ${order.status === "delivered"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : order.status === "pending"
-                                                        ? "bg-yellow-100 text-yellow-800"
-                                                        : "bg-blue-100 text-blue-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : order.status === "pending"
+                                                    ? "bg-yellow-100 text-yellow-800"
+                                                    : "bg-blue-100 text-blue-800"
                                                 }`}
                                         >
                                             {order.status}

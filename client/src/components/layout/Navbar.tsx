@@ -120,17 +120,17 @@ export function Navbar() {
                                     {isAuthenticated ? (
                                         <>
                                             <div className="px-4 py-2 border-b border-gray-100">
-                                                <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                                                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                                                 <p className="text-xs text-gray-500">{user?.email}</p>
                                             </div>
-                                            {user?.role === "admin" ? (
+                                            {user?.role === "ADMIN" ? (
                                                 <Link
                                                     to="/admin"
                                                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                                     onClick={() => setIsUserMenuOpen(false)}
                                                 >
                                                     <LayoutDashboard className="h-4 w-4" />
-                                                    Admin Dashboard
+                                                    Dashboard
                                                 </Link>
                                             ) : (
                                                 <Link

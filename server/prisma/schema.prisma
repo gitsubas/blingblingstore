@@ -40,19 +40,22 @@ enum Role {
 
 // Placeholder for future models to avoid validation errors if referenced
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  stock       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  description       String
+  price             Float
+  categoryId        String
+  category          Category @relation(fields: [categoryId], references: [id])
+  stock             Int      @default(0)
+  rating            Float?   // Average rating calculated from reviews
+  reviewCount       Int      @default(0)
+  featured          Boolean  @default(false)
+  lowStockThreshold Int      @default(5)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-
-  images   ProductImage[]
-  variants ProductVariant[]
+  images     ProductImage[]
+  variants   ProductVariant[]
   orderItems OrderItem[]
   reviews    Review[]
 }
@@ -71,13 +74,12 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size      String?
-  color     String?
-  material  String?
-  stock     Int      @default(0)
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributes Json     // Flexible attributes: {"Size": "M", "Color": "Red", etc.}
+  price      Float    // Variant-specific pricing
+  stock      Int      @default(0)
 }
 
 model Review {

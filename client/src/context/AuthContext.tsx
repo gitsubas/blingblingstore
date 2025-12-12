@@ -1,261 +1,169 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Address } from "../types/Address";
+import { authService } from "../services/api";
 
 export interface User {
     id: string;
-    username: string;
+    name: string;
     email: string;
-    role: "user" | "admin";
-    createdAt: string;
-    shippingAddresses?: Address[];
+    role: "CUSTOMER" | "ADMIN";
     profilePicture?: string;
+    addresses?: Address[];
+    createdAt?: string;
 }
 
 interface AuthContextType {
     user: User | null;
+    loading: boolean;
     login: (email: string, password: string, redirectTo?: string | null) => Promise<boolean>;
-    signup: (username: string, email: string, password: string) => Promise<boolean>;
+    signup: (name: string, email: string, password: string) => Promise<boolean>;
     logout: () => void;
     resetPassword: (email: string) => Promise<boolean>;
-    changePassword: (password: string) => Promise<boolean>;
+    changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+    updateProfile: (data: { name?: string; email?: string; profilePicture?: string; addresses?: Address[] }) => Promise<boolean>;
+    refreshUser: () => Promise<void>;
     isAuthenticated: boolean;
     isAdmin: boolean;
-    // Admin-only methods
-    getAllUsers: () => User[];
-    updateUser: (userId: string, data: Partial<Omit<User, 'id'>>) => boolean;
-    deleteUser: (userId: string) => boolean;
-    updateUserRole: (userId: string, role: "user" | "admin") => boolean;
-    createUser: (username: string, email: string, password: string, role: "user" | "admin") => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    // Initialize user from localStorage on mount
     useEffect(() => {
-        const savedUser = localStorage.getItem("currentUser");
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
-        }
+        const initializeAuth = async () => {
+            const token = localStorage.getItem("token");
+            const savedUser = localStorage.getItem("user");
+
+            if (token && savedUser) {
+                try {
+                    // Verify token is still valid by fetching current user
+                    const { user } = await authService.getMe();
+                    setUser(user);
+                    localStorage.setItem("user", JSON.stringify(user)); // Update with fresh data
+                } catch (error) {
+                    // Token invalid or expired, clear everything
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
+                    setUser(null);
+                }
+            }
+            setLoading(false);
+        };
+
+        initializeAuth();
     }, []);
 
-    const signup = async (username: string, email: string, password: string): Promise<boolean> => {
-        // Get existing users
-        const usersData = localStorage.getItem("users");
-        const users = usersData ? JSON.parse(usersData) : [];
+    const signup = async (name: string, email: string, password: string): Promise<boolean> => {
+        try {
+            const { user, token } = await authService.register({ name, email, password });
 
-        // Check if email already exists
-        if (users.some((u: any) => u.email === email)) {
+            // Store token and user
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
+
+            return true;
+        } catch (error: any) {
+            console.error("Signup failed:", error);
             return false;
         }
-
-        // Create new user
-        const newUser: User = {
-            id: Date.now().toString(),
-            username,
-            email,
-            role: "user",
-            createdAt: new Date().toISOString(),
-            shippingAddresses: [],
-        };
-
-        // Store password separately (in production, this would be hashed on backend)
-        const userCredentials = {
-            email,
-            password, // In production: hash this!
-            userId: newUser.id,
-        };
-
-        users.push(newUser);
-        const credentials = usersData ? JSON.parse(localStorage.getItem("userCredentials") || "[]") : [];
-        credentials.push(userCredentials);
-
-        localStorage.setItem("users", JSON.stringify(users));
-        localStorage.setItem("userCredentials", JSON.stringify(credentials));
-
-        return true;
     };
 
     const login = async (email: string, password: string, redirectTo?: string | null): Promise<boolean> => {
-        // Handle admin login
-        if (email === "admin" && password === "admin") {
-            const adminUser: User = {
-                id: "admin",
-                username: "Admin",
-                email: "admin@store.com",
-                role: "admin",
-                createdAt: new Date().toISOString(),
-                shippingAddresses: [],
-            };
-            setUser(adminUser);
-            localStorage.setItem("currentUser", JSON.stringify(adminUser));
-            // Defer navigation to allow React state to update
-            // Only navigate if no redirect is specified (redirect will be handled by Login component)
+        try {
+            const { user, token } = await authService.login(email, password);
+
+            // Store token and user
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
+
+            // Navigate if no redirect specified
             if (!redirectTo) {
-                setTimeout(() => navigate("/admin"), 0);
+                setTimeout(() => navigate(user.role === "ADMIN" ? "/admin" : "/"), 0);
             }
+
             return true;
+        } catch (error: any) {
+            console.error("Login failed:", error);
+            return false;
         }
-
-        // Handle regular user login
-        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
-        const userCred = credentials.find((c: any) => c.email === email && c.password === password);
-
-        if (userCred) {
-            const users = JSON.parse(localStorage.getItem("users") || "[]");
-            const foundUser = users.find((u: User) => u.id === userCred.userId);
-
-            if (foundUser) {
-                setUser(foundUser);
-                localStorage.setItem("currentUser", JSON.stringify(foundUser));
-                // Only navigate if no redirect is specified (redirect will be handled by Login component)
-                if (!redirectTo) {
-                    setTimeout(() => navigate("/"), 0);
-                }
-                return true;
-            }
-        }
-
-        return false;
     };
 
     const logout = () => {
+        // Clear token and user
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setUser(null);
-        localStorage.removeItem("currentUser");
         navigate("/");
     };
 
     const resetPassword = async (email: string): Promise<boolean> => {
-        // Mock password reset - in production, this would send an email
-        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
-        const userExists = credentials.some((c: any) => c.email === email);
-        return userExists;
-    };
-
-    const changePassword = async (password: string): Promise<boolean> => {
-        if (!user) return false;
-
-        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
-        const userCredIndex = credentials.findIndex((c: any) => c.userId === user.id);
-
-        if (userCredIndex === -1) return false;
-
-        credentials[userCredIndex].password = password;
-        localStorage.setItem("userCredentials", JSON.stringify(credentials));
+        // This would typically call a password reset endpoint
+        // For now, just return true as a placeholder
+        console.log("Password reset requested for:", email);
+        // In production: await authService.requestPasswordReset(email);
         return true;
     };
 
-    // Admin-only methods
-    const getAllUsers = (): User[] => {
-        if (!user || user.role !== "admin") return [];
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        return users;
-    };
-
-    const updateUser = (userId: string, data: Partial<Omit<User, 'id'>>): boolean => {
-        if (!user) return false;
-        // Allow admin to update anyone, or user to update themselves
-        if (user.role !== "admin" && user.id !== userId) return false;
-
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        const userIndex = users.findIndex((u: User) => u.id === userId);
-
-        if (userIndex === -1) return false;
-
-        users[userIndex] = { ...users[userIndex], ...data };
-        localStorage.setItem("users", JSON.stringify(users));
-
-        // Update current user if editing self
-        if (userId === user.id) {
-            const updatedUser = users[userIndex];
-            setUser(updatedUser);
-            localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-        }
-
-        return true;
-    };
-
-    const deleteUser = (userId: string): boolean => {
-        if (!user || user.role !== "admin") return false;
-        if (userId === user.id) return false; // Cannot delete self
-
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        const filteredUsers = users.filter((u: User) => u.id !== userId);
-
-        if (filteredUsers.length === users.length) return false;
-
-        localStorage.setItem("users", JSON.stringify(filteredUsers));
-
-        // Also remove credentials
-        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
-        const filteredCredentials = credentials.filter((c: any) => c.userId !== userId);
-        localStorage.setItem("userCredentials", JSON.stringify(filteredCredentials));
-
-        return true;
-    };
-
-    const updateUserRole = (userId: string, role: "user" | "admin"): boolean => {
-        if (!user || user.role !== "admin") return false;
-        if (userId === user.id) return false; // Cannot change own role
-
-        return updateUser(userId, { role });
-    };
-
-    const createUser = (username: string, email: string, password: string, role: "user" | "admin" = "user"): boolean => {
-        if (!user || user.role !== "admin") return false;
-
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-
-        // Check if email already exists
-        if (users.some((u: User) => u.email === email)) {
+    const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
+        try {
+            await authService.changePassword(oldPassword, newPassword);
+            return true;
+        } catch (error: any) {
+            console.error("Password change failed:", error);
             return false;
         }
+    };
 
-        const newUser: User = {
-            id: Date.now().toString(),
-            username,
-            email,
-            role,
-            createdAt: new Date().toISOString(),
-            shippingAddresses: [],
-        };
+    const updateProfile = async (data: { name?: string; email?: string; profilePicture?: string; addresses?: Address[] }): Promise<boolean> => {
+        try {
+            const { user: updatedUser } = await authService.updateProfile(data);
 
-        const userCredentials = {
-            email,
-            password,
-            userId: newUser.id,
-        };
+            // Update local storage and state
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            setUser(updatedUser);
 
-        users.push(newUser);
-        const credentials = JSON.parse(localStorage.getItem("userCredentials") || "[]");
-        credentials.push(userCredentials);
+            return true;
+        } catch (error: any) {
+            console.error("Profile update failed:", error);
+            return false;
+        }
+    };
 
-        localStorage.setItem("users", JSON.stringify(users));
-        localStorage.setItem("userCredentials", JSON.stringify(credentials));
-
-        return true;
+    const refreshUser = async (): Promise<void> => {
+        try {
+            const { user } = await authService.getMe();
+            localStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
+        } catch (error) {
+            // Token invalid, logout
+            logout();
+        }
     };
 
     return (
         <AuthContext.Provider
             value={{
                 user,
+                loading,
                 login,
                 signup,
                 logout,
                 resetPassword,
                 changePassword,
+                updateProfile,
+                refreshUser,
                 isAuthenticated: !!user,
-                isAdmin: user?.role === "admin",
-                // Admin methods
-                getAllUsers,
-                updateUser,
-                deleteUser,
-                updateUserRole,
-                createUser,
+                get isAdmin() {
+                    return user?.role === "ADMIN";
+                },
             }}
         >
             {children}

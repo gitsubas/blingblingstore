@@ -1,12 +1,11 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Package, User as UserIcon, Star } from "lucide-react";
+import { Package, User as UserIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 const tabs = [
     { name: "Orders", icon: Package, href: "/dashboard/orders" },
     { name: "Profile", icon: UserIcon, href: "/dashboard/profile" },
-    { name: "Reviews", icon: Star, href: "/dashboard/reviews" },
 ];
 
 export function UserDashboard() {
@@ -18,13 +17,19 @@ export function UserDashboard() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
-                <p className="text-gray-600 mt-1">Welcome back, {user?.username}!</p>
+                <p className="text-gray-600 mt-1">Welcome back, {user?.name}!</p>
             </div>
 
             {/* Navigation Tabs */}
             <div className="border-b border-gray-200 mb-8">
                 <nav className="-mb-px flex space-x-8">
-                    {tabs.map((tab) => {
+                    {tabs.filter(tab => {
+                        // Hide Orders tab for admin users
+                        if (tab.name === "Orders" && user?.role === "ADMIN") {
+                            return false;
+                        }
+                        return true;
+                    }).map((tab) => {
                         const Icon = tab.icon;
                         const isActive = location.pathname === tab.href || location.pathname.startsWith(tab.href + "/");
                         return (

@@ -64,7 +64,8 @@ export function Login() {
                                 placeholder="Enter your email or username"
                                 required
                             />
-                            <p className="text-xs text-gray-500">Admin: admin / admin</p>
+                            <p className="text-xs text-gray-500">Customer: customer@demo.com / customer123</p>
+                            <p className="text-xs text-gray-500">Admin: admin@blingbling.com / admin123</p>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Password</label>

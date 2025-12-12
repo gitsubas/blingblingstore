@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { ProductCard } from "../../components/ui/ProductCard";
 import { useProducts } from "../../context/ProductsContext";
+import { ErrorAlert } from "../../components/ui/ErrorAlert";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 
 import sculptureImg from "../../assets/products/sculpture.jpg";
 import scarfImg from "../../assets/products/scarf.jpg";
@@ -26,11 +28,25 @@ const categories = [
 ];
 
 export function Home() {
-    const { products } = useProducts();
+    const { products, loading, error, refreshProducts } = useProducts();
     const featuredProducts = products.slice(0, 8);
     const [isExpanded, setIsExpanded] = useState(false);
 
     const displayedCategories = isExpanded ? categories : categories.slice(0, 4);
+
+    // Show loading state
+    if (loading) {
+        return <LoadingSpinner message="Loading products..." className="min-h-[400px]" />;
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="max-w-4xl mx-auto py-12">
+                <ErrorAlert error={error} onRetry={refreshProducts} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-20">
@@ -45,7 +61,7 @@ export function Home() {
                 </div>
                 <div className="relative z-10 px-6 py-24 sm:px-12 sm:py-32 lg:px-16">
                     <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6">
-                        Elegant Home & Style
+                        From your look to your living <br /> <span className="text-primary">always Bling Bling.</span>
                     </h1>
                     <p className="mt-4 max-w-xl text-xl text-white mb-8">
                         Discover our curated collection of home decor, fashion, and accessories.

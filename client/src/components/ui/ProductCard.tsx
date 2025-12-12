@@ -7,6 +7,7 @@ import { Badge } from "../ui/Badge";
 import { Product, useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAuth } from "../../context/AuthContext";
+import logoImg from "../../assets/logo.jpg";
 
 interface ProductCardProps {
     product: Product;
@@ -17,7 +18,12 @@ export function ProductCard({ product }: ProductCardProps) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
-    const images = product.images && product.images.length > 0 ? product.images : [product.image];
+    // Filter out empty/null images and ensure we have valid image URLs
+    const validImages = product.images && product.images.length > 0
+        ? product.images.filter(img => img && img.trim() !== '')
+        : (product.image && product.image.trim() !== '' ? [product.image] : []);
+    const images = validImages.length > 0 ? validImages : [];
+    const hasValidImages = images.length > 0;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // Stock status logic
@@ -48,11 +54,21 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="relative">
                 {/* Main Image Display */}
                 <div className="relative aspect-square overflow-hidden bg-gray-100">
-                    <img
-                        src={images[currentImageIndex]}
-                        alt={`${product.name} - Image ${currentImageIndex + 1}`}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
+                    {hasValidImages && images[currentImageIndex] && images[currentImageIndex].trim() !== '' ? (
+                        <img
+                            src={images[currentImageIndex]}
+                            alt={`${product.name} - Image ${currentImageIndex + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                    ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gray-50">
+                            <img
+                                src={logoImg}
+                                alt="Bling Bling Logo"
+                                className="h-1/2 w-1/2 object-contain opacity-30 grayscale"
+                            />
+                        </div>
+                    )}
                     <div className="absolute top-2 right-2 flex flex-col gap-2">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                             {product.category}
@@ -103,11 +119,21 @@ export function ProductCard({ product }: ProductCardProps) {
                                     }`}
                                 aria-label={`View image ${index + 1}`}
                             >
-                                <img
-                                    src={img}
-                                    alt={`${product.name} thumbnail ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                />
+                                {img && img.trim() !== '' ? (
+                                    <img
+                                        src={img}
+                                        alt={`${product.name} thumbnail ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                        <img
+                                            src={logoImg}
+                                            alt="Bling Bling Logo"
+                                            className="w-8 h-8 object-contain opacity-30 grayscale"
+                                        />
+                                    </div>
+                                )}
                             </button>
                         ))}
                     </div>

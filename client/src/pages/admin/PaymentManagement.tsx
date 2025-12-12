@@ -14,19 +14,20 @@ interface PaymentRecord {
 }
 
 export function PaymentManagement() {
-    const { getAllOrders } = useOrders();
+    const { orders } = useOrders();
     const [searchTerm, setSearchTerm] = useState("");
     const [methodFilter, setMethodFilter] = useState<string>("all");
 
-    const orders = getAllOrders();
+    // Use empty array as fallback
+    const allOrders = orders || [];
 
     // Transform orders into payment records
-    const payments: PaymentRecord[] = orders.map((order) => ({
+    const payments: PaymentRecord[] = allOrders.map((order) => ({
         orderId: order.id,
         date: order.createdAt,
         amount: order.total,
         method: order.paymentMethod,
-        transactionId: order.paymentDetails?.transactionId,
+        transactionId: (order as any).paymentDetails?.transactionId,
         status: order.status,
     }));
 

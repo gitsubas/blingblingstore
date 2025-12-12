@@ -1,238 +1,136 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
-
-export interface OrderItem {
-    productId: string;
-    productName: string;
-    price: number;
-    quantity: number;
-    image: string;
-}
-
-export interface Review {
-    productId: string;
-    rating: number;
-    comment: string;
-    createdAt: string;
-}
-
-export interface ReturnRequest {
-    reason: string;
-    type: "refund" | "exchange";
-    notes: string;
-    status: "pending" | "approved" | "rejected";
-    createdAt: string;
-}
+import { orderService } from "../services/api";
 
 export interface Order {
     id: string;
     userId: string;
-    items: OrderItem[];
     total: number;
-    status: "pending" | "processing" | "shipped" | "delivered" | "returned";
-    paymentMethod: "esewa" | "khalti" | "cod" | "card";
-    paymentDetails?: {
-        transactionId?: string;
-        paidAmount: number;
-    };
-    shippingAddress: {
-        fullName: string;
-        address: string;
-        city: string;
-        postalCode: string;
-        phone: string;
-    };
+    status: string;
+    paymentStatus: string;
+    paymentMethod: string;
+    shippingAddress: any;
     createdAt: string;
-    reviews?: Review[];
-    returnRequest?: ReturnRequest;
+    updatedAt: string;
+    items?: OrderItem[];
+    timeline?: OrderTimeline[];
+}
+
+export interface OrderItem {
+    id: string;
+    orderId: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    product?: any;
+}
+
+export interface OrderTimeline {
+    id: string;
+    orderId: string;
+    status: string;
+    note?: string;
+    createdAt: string;
 }
 
 interface OrdersContextType {
     orders: Order[];
-    createOrder: (
-        items: OrderItem[],
-        total: number,
-        shippingAddress: Order["shippingAddress"],
-        paymentMethod: Order["paymentMethod"],
-        transactionId?: string
-    ) => Order;
+    loading: boolean;
+    error: string | null;
+    createOrder: (orderData: any) => Promise<string | null>;
+    cancelOrder: (orderId: string) => Promise<boolean>;
+    requestReturn: (orderId: string, reason: string) => Promise<boolean>;
     getOrderById: (orderId: string) => Order | undefined;
-    getUserOrders: (userId: string) => Order[];
-    submitReview: (orderId: string, productId: string, rating: number, comment: string) => void;
-    requestReturn: (orderId: string, reason: string, type: "refund" | "exchange", notes: string) => void;
-    // Admin-only methods
-    getAllOrders: () => Order[];
-    updateOrderStatus: (orderId: string, status: Order["status"]) => boolean;
-    deleteOrder: (orderId: string) => boolean;
-    getOrderStats: () => {
-        totalOrders: number;
-        totalRevenue: number;
-        pendingOrders: number;
-        deliveredOrders: number;
-    };
+    refreshOrders: () => Promise<void>;
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
 export function OrdersProvider({ children }: { children: React.ReactNode }) {
     const [orders, setOrders] = useState<Order[]>([]);
-    const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    // Fetch user orders from API
+    const refreshOrders = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { orders: fetchedOrders } = await orderService.getUserOrders();
+            setOrders(fetchedOrders);
+        } catch (err: any) {
+            // Don't set error if user is not logged in (401)
+            if (err.response?.status !== 401) {
+                setError(err.message || "Failed to load orders");
+                console.error("Failed to fetch orders:", err);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch orders on mount if user is authenticated
     useEffect(() => {
-        const savedOrders = localStorage.getItem("orders");
-        if (savedOrders) {
-            setOrders(JSON.parse(savedOrders));
+        const token = localStorage.getItem("token");
+        if (token) {
+            refreshOrders();
         }
     }, []);
 
-    useEffect(() => {
-        localStorage.setItem("orders", JSON.stringify(orders));
-    }, [orders]);
+    const createOrder = async (orderData: {
+        items: { productId: string; quantity: number }[];
+        shippingAddress: any;
+        paymentMethod: string;
+    }): Promise<string | null> => {
+        try {
+            const { order } = await orderService.createOrder(orderData);
+            setOrders(prev => [order, ...prev]);
+            return order.id;
+        } catch (error: any) {
+            console.error("Failed to create order:", error);
+            setError(error.message || "Failed to create order");
+            return null;
+        }
+    };
 
-    const createOrder = (
-        items: OrderItem[],
-        total: number,
-        shippingAddress: Order["shippingAddress"],
-        paymentMethod: Order["paymentMethod"],
-        transactionId?: string
-    ): Order => {
-        // Allow guest checkout
-        const userId = user ? user.id : "guest";
+    const cancelOrder = async (orderId: string): Promise<boolean> => {
+        try {
+            await orderService.cancelOrder(orderId);
+            await refreshOrders(); // Refresh to get updated order
+            return true;
+        } catch (error: any) {
+            console.error("Failed to cancel order:", error);
+            setError(error.message || "Failed to cancel order");
+            return false;
+        }
+    };
 
-        const newOrder: Order = {
-            id: `ORD-${Date.now()}`,
-            userId,
-            items,
-            total,
-            status: "pending",
-            paymentMethod,
-            paymentDetails: transactionId
-                ? {
-                    transactionId,
-                    paidAmount: total,
-                }
-                : undefined,
-            shippingAddress,
-            createdAt: new Date().toISOString(),
-            reviews: [],
-        };
-
-        setOrders((prev) => [newOrder, ...prev]);
-        return newOrder;
+    const requestReturn = async (orderId: string, reason: string): Promise<boolean> => {
+        try {
+            await orderService.requestReturn(orderId, reason);
+            await refreshOrders(); // Refresh to get updated order
+            return true;
+        } catch (error: any) {
+            console.error("Failed to request return:", error);
+            setError(error.message || "Failed to request return");
+            return false;
+        }
     };
 
     const getOrderById = (orderId: string): Order | undefined => {
-        return orders.find((order) => order.id === orderId);
-    };
-
-    const getUserOrders = (userId: string): Order[] => {
-        return orders.filter((order) => order.userId === userId);
-    };
-
-    const submitReview = (
-        orderId: string,
-        productId: string,
-        rating: number,
-        comment: string
-    ) => {
-        setOrders((prev) =>
-            prev.map((order) => {
-                if (order.id === orderId) {
-                    const review: Review = {
-                        productId,
-                        rating,
-                        comment,
-                        createdAt: new Date().toISOString(),
-                    };
-                    return {
-                        ...order,
-                        reviews: [...(order.reviews || []), review],
-                    };
-                }
-                return order;
-            })
-        );
-    };
-
-    const requestReturn = (
-        orderId: string,
-        reason: string,
-        type: "refund" | "exchange",
-        notes: string
-    ) => {
-        setOrders((prev) =>
-            prev.map((order) => {
-                if (order.id === orderId) {
-                    const returnRequest: ReturnRequest = {
-                        reason,
-                        type,
-                        notes,
-                        status: "pending",
-                        createdAt: new Date().toISOString(),
-                    };
-                    return {
-                        ...order,
-                        returnRequest,
-                    };
-                }
-                return order;
-            })
-        );
-    };
-
-    // Admin-only methods
-    const getAllOrders = (): Order[] => {
-        return orders;
-    };
-
-    const updateOrderStatus = (orderId: string, status: Order["status"]): boolean => {
-        const orderExists = orders.some((order) => order.id === orderId);
-        if (!orderExists) return false;
-
-        setOrders((prev) =>
-            prev.map((order) =>
-                order.id === orderId ? { ...order, status } : order
-            )
-        );
-        return true;
-    };
-
-    const deleteOrder = (orderId: string): boolean => {
-        const orderExists = orders.some((order) => order.id === orderId);
-        if (!orderExists) return false;
-
-        setOrders((prev) => prev.filter((order) => order.id !== orderId));
-        return true;
-    };
-
-    const getOrderStats = () => {
-        const totalOrders = orders.length;
-        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-        const pendingOrders = orders.filter((order) => order.status === "pending").length;
-        const deliveredOrders = orders.filter((order) => order.status === "delivered").length;
-
-        return {
-            totalOrders,
-            totalRevenue,
-            pendingOrders,
-            deliveredOrders,
-        };
+        return orders.find(o => o.id === orderId);
     };
 
     return (
         <OrdersContext.Provider
             value={{
                 orders,
+                loading,
+                error,
                 createOrder,
-                getOrderById,
-                getUserOrders,
-                submitReview,
+                cancelOrder,
                 requestReturn,
-                // Admin methods
-                getAllOrders,
-                updateOrderStatus,
-                deleteOrder,
-                getOrderStats,
+                getOrderById,
+                refreshOrders,
             }}
         >
             {children}

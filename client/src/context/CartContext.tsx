@@ -8,22 +8,29 @@ export interface ProductAttribute {
 export interface ProductVariant {
     id: string;
     attributes: { [key: string]: string }; // e.g. { "Size": "M", "Color": "Red" }
-    price: number;
+    price: number;  // Variant-specific price
     stock: number;
+}
+
+export interface Category {
+    id: string;
+    name: string;
 }
 
 export interface Product {
     id: string;
     name: string;
-    price: number;
-    category: string;
-    image: string;
-    images?: string[]; // Multiple images for gallery
+    price: number;  // Base price
+    category: string;  // Category name for display
+    categoryId: string;  // Backend uses categoryId as UUID
+    image: string;  // Main image
+    images?: string[];  // Multiple images for gallery
     description: string;
-    rating?: number;
-    reviews?: number;
-    stock?: number; // Available quantity (overall or default)
-    lowStockThreshold?: number; // Threshold for low stock warning (default: 5)
+    rating?: number;  // Average rating
+    reviewCount?: number;  // Number of reviews (changed from: reviews)
+    stock?: number;  // Available quantity (overall or default)
+    lowStockThreshold?: number;  // Threshold for low stock warning
+    featured?: boolean;  // Featured product flag
     attributes?: ProductAttribute[];
     variants?: ProductVariant[];
 }

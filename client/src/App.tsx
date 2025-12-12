@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { Layout } from "./components/layout/Layout";
 import { Home } from "./pages/public/Home";
 import { Shop } from "./pages/public/Shop";
@@ -48,52 +49,78 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
 
 function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="shop" element={<Shop />} />
-                <Route path="product/:id" element={<ProductDetails />} />
-                <Route path="cart" element={<Cart />} />
-                <Route path="login" element={<Login />} />
-                <Route path="signup" element={<Signup />} />
-                <Route path="password-reset" element={<PasswordReset />} />
-                <Route path="checkout" element={<Checkout />} />
-                <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
-                <Route path="about" element={<About />} />
-                <Route path="contact" element={<Contact />} />
-                <Route path="*" element={<NotFound />} />
+        <>
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: '#363636',
+                        color: '#fff',
+                    },
+                    success: {
+                        duration: 3000,
+                        iconTheme: {
+                            primary: '#10b981',
+                            secondary: '#fff',
+                        },
+                    },
+                    error: {
+                        duration: 4000,
+                        iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#fff',
+                        },
+                    },
+                }}
+            />
+            <Routes>
+                <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="shop" element={<Shop />} />
+                    <Route path="product/:id" element={<ProductDetails />} />
+                    <Route path="cart" element={<Cart />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="signup" element={<Signup />} />
+                    <Route path="password-reset" element={<PasswordReset />} />
+                    <Route path="checkout" element={<Checkout />} />
+                    <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="contact" element={<Contact />} />
+                    <Route path="*" element={<NotFound />} />
 
-                {/* User Dashboard Routes */}
-                <Route path="dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>}>
-                    <Route index element={<Navigate to="/dashboard/orders" />} />
-                    <Route path="orders" element={<OrderHistory />} />
-                    <Route path="orders/:orderId" element={<OrderDetails />} />
-                    <Route path="wishlist" element={<Wishlist />} />
-                    <Route path="profile" element={<UserProfile />} />
+                    {/* User Dashboard Routes */}
+                    <Route path="dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>}>
+                        <Route index element={<Navigate to="/dashboard/orders" />} />
+                        <Route path="orders" element={<OrderHistory />} />
+                        <Route path="orders/:orderId" element={<OrderDetails />} />
+                        <Route path="wishlist" element={<Wishlist />} />
+                        <Route path="profile" element={<UserProfile />} />
+                    </Route>
                 </Route>
-            </Route>
 
-            {/* Admin Routes with AdminLayout */}
-            <Route
-                path="/admin"
-                element={
-                    <ProtectedRoute adminOnly>
-                        <AdminLayout />
-                    </ProtectedRoute>
-                }
-            >
-                <Route index element={<Dashboard />} />
-                <Route path="users" element={<UserManagement />} />
-                <Route path="users/new" element={<UserEditor />} />
-                <Route path="users/:id" element={<UserEditor />} />
-                <Route path="orders" element={<OrderManagement />} />
-                <Route path="orders/:orderId" element={<OrderDetailAdmin />} />
-                <Route path="payments" element={<PaymentManagement />} />
-                <Route path="products" element={<ProductManagement />} />
-                <Route path="products/new" element={<ProductEditor />} />
-                <Route path="products/:id" element={<ProductEditor />} />
-            </Route>
-        </Routes>
+                {/* Admin Routes with AdminLayout */}
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute adminOnly>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route index element={<Dashboard />} />
+                    <Route path="users" element={<UserManagement />} />
+                    <Route path="users/new" element={<UserEditor />} />
+                    <Route path="users/:id" element={<UserEditor />} />
+                    <Route path="orders" element={<OrderManagement />} />
+                    <Route path="orders/:orderId" element={<OrderDetailAdmin />} />
+                    <Route path="payments" element={<PaymentManagement />} />
+                    <Route path="products" element={<ProductManagement />} />
+                    <Route path="products/new" element={<ProductEditor />} />
+                    <Route path="products/:id" element={<ProductEditor />} />
+                </Route>
+            </Routes>
+        </>
     );
 }
 

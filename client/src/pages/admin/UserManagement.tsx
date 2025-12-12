@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2, Shield, ShieldOff } from "lucide-react";
 import { DataTable, Column } from "../../components/ui/DataTable";
@@ -6,49 +6,69 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Modal } from "../../components/ui/Modal";
-import { useAuth, User } from "../../context/AuthContext";
+import { User } from "../../context/AuthContext";
+import { adminService } from "../../services/api";
 
 export function UserManagement() {
-    const { getAllUsers, deleteUser, updateUserRole } = useAuth();
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin">("all");
+    const [roleFilter, setRoleFilter] = useState<"all" | "CUSTOMER" | "ADMIN">("all");
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId?: string; username?: string }>({
         isOpen: false,
     });
 
-    const users = getAllUsers();
+    // Fetch users on mount
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    const loadUsers = async () => {
+        setLoading(true);
+        try {
+            const { users: fetchedUsers } = await adminService.getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Failed to load users:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredUsers = users.filter((user) => {
         const matchesSearch =
-            user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === "all" || user.role === roleFilter;
         return matchesSearch && matchesRole;
     });
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (deleteModal.userId) {
-            const success = deleteUser(deleteModal.userId);
-            if (success) {
+            try {
+                await adminService.deleteUser(deleteModal.userId);
                 setDeleteModal({ isOpen: false });
-            } else {
+                await loadUsers(); // Refresh list
+            } catch (error) {
                 alert("Cannot delete this user");
             }
         }
     };
 
-    const handleToggleRole = (userId: string, currentRole: "user" | "admin") => {
-        const newRole = currentRole === "admin" ? "user" : "admin";
-        const success = updateUserRole(userId, newRole);
-        if (!success) {
+    const handleToggleRole = async (userId: string, currentRole: "CUSTOMER" | "ADMIN") => {
+        const newRole = currentRole === "ADMIN" ? "CUSTOMER" : "ADMIN";
+        try {
+            await adminService.updateUserRole(userId, newRole);
+            await loadUsers(); // Refresh list
+        } catch (error) {
             alert("Cannot change user role");
         }
     };
 
     const columns: Column<User>[] = [
         {
-            key: "username",
-            header: "Username",
+            key: "name",
+            header: "Name",
             sortable: true,
         },
         {
@@ -99,11 +119,11 @@ export function UserManagement() {
                     />
                     <Select
                         value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "admin")}
+                        onChange={(e) => setRoleFilter(e.target.value as "all" | "CUSTOMER" | "ADMIN")}
                         options={[
                             { value: "all", label: "All Roles" },
-                            { value: "user", label: "Users" },
-                            { value: "admin", label: "Admins" },
+                            { value: "CUSTOMER", label: "Customers" },
+                            { value: "ADMIN", label: "Admins" },
                         ]}
                     />
                 </div>
@@ -120,9 +140,9 @@ export function UserManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleToggleRole(user.id, user.role)}
-                            title={user.role === "admin" ? "Demote to User" : "Promote to Admin"}
+                            title={user.role === "ADMIN" ? "Demote to Customer" : "Promote to Admin"}
                         >
-                            {user.role === "admin" ? (
+                            {user.role === "ADMIN" ? (
                                 <ShieldOff className="h-4 w-4 text-orange-600" />
                             ) : (
                                 <Shield className="h-4 w-4 text-purple-600" />
@@ -137,7 +157,7 @@ export function UserManagement() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => setDeleteModal({ isOpen: true, userId: user.id, username: user.username })}
+                            onClick={() => setDeleteModal({ isOpen: true, userId: user.id, username: user.name })}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
