@@ -11,9 +11,8 @@ import { adminService } from "../../services/api";
 
 export function UserManagement() {
     const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [roleFilter, setRoleFilter] = useState<"all" | "CUSTOMER" | "ADMIN">("all");
+    const [roleFilter, setRoleFilter] = useState<"all" | "" | "ADMIN" | "CUSTOMER">("all");
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId?: string; username?: string }>({
         isOpen: false,
     });
@@ -24,14 +23,11 @@ export function UserManagement() {
     }, []);
 
     const loadUsers = async () => {
-        setLoading(true);
         try {
             const { users: fetchedUsers } = await adminService.getUsers();
             setUsers(fetchedUsers);
         } catch (error) {
             console.error("Failed to load users:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -82,7 +78,7 @@ export function UserManagement() {
             sortable: true,
             render: (user) => (
                 <span
-                    className={`px-2 py-1 text-xs rounded-full ${user.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
+                    className={`px-2 py-1 text-xs rounded-full ${user.role === "ADMIN" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
                         }`}
                 >
                     {user.role}
@@ -93,7 +89,7 @@ export function UserManagement() {
             key: "createdAt",
             header: "Joined",
             sortable: true,
-            render: (user) => new Date(user.createdAt).toLocaleDateString(),
+            render: (user) => user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A",
         },
     ];
 
